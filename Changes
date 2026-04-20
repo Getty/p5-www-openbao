@@ -1,0 +1,9 @@
+Revision history for WWW-OpenBao
+
+{{$NEXT}}
+
+ - Initial release extracted from HI::Daemon
+ - HTTP client for OpenBao / HashiCorp Vault KV v2 API
+ - read_secret / write_secret / delete_secret / list_secrets / secret_exists
+ - login_k8s for Kubernetes ServiceAccount auth
+ - health / init / unseal / enable_engine for basic sys calls
