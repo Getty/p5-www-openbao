@@ -1,6 +1,6 @@
 package WWW::OpenBao;
 # ABSTRACT: HTTP client for OpenBao / HashiCorp Vault API
-
+our $VERSION = '0.002';
 use Moo;
 use HTTP::Tiny;
 use JSON::MaybeXS;
