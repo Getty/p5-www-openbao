@@ -119,3 +119,108 @@ sub enable_engine {
 }
 
 1;
+
+__END__
+
+=head1 SYNOPSIS
+
+  use WWW::OpenBao;
+
+  my $bao = WWW::OpenBao->new(
+    endpoint => $ENV{OPENBAO_ADDR}  // 'http://127.0.0.1:8200',
+    token    => $ENV{OPENBAO_TOKEN} // '',
+    kv_mount => 'secret',
+  );
+
+  $bao->write_secret('app/db', { user => 'app', pass => 'hunter2' });
+  my $creds = $bao->read_secret('app/db');
+  my $keys  = $bao->list_secrets('app/');
+  $bao->delete_secret('app/db');
+
+  $bao->login_k8s( role => 'my-app' );  # sets $bao->token
+
+=head1 DESCRIPTION
+
+L<WWW::OpenBao> is a minimal HTTP client for L<OpenBao|https://openbao.org/>
+and HashiCorp Vault. It covers the day-to-day surface used by application
+code: KV v2 secret read/write/list/delete, Kubernetes ServiceAccount login,
+and a handful of C<sys/*> bootstrap helpers (C<health>, C<init>, C<unseal>,
+C<enable_engine>).
+
+It is intentionally small — no caching, no lease renewal, no policy
+management. If you need those, reach for a heavier client; if you just want
+to talk to Vault/OpenBao from Perl, this is enough.
+
+All methods C<croak> on non-2xx responses, with the single exception of
+C<read_secret> which returns C<undef> on 404 so callers can treat "secret not
+found" as a soft miss.
+
+=attr endpoint
+
+Required. Base URL of the Vault/OpenBao server, e.g.
+C<http://127.0.0.1:8200>. No trailing slash.
+
+=attr token
+
+Vault token used for the C<X-Vault-Token> header. Writable — L</login_k8s>
+overwrites it on success.
+
+=attr kv_mount
+
+Mount path of the KV v2 engine. Defaults to C<secret>.
+
+=method read_secret($path)
+
+Returns the C<data.data> hashref for a KV v2 secret, or C<undef> if the path
+does not exist.
+
+=method write_secret($path, \%data)
+
+Writes (creates a new version of) a KV v2 secret. Returns the decoded
+response.
+
+=method delete_secret($path)
+
+Deletes the secret I<and> its metadata (all versions). This is the
+destructive C<DELETE /metadata/...> form, not the soft-delete.
+
+=method list_secrets($path)
+
+Returns an arrayref of keys at the given KV v2 metadata path. Empty arrayref
+if the path is missing.
+
+=method secret_exists($path)
+
+True if metadata exists for the given path, false otherwise. Does not fetch
+the secret data.
+
+=method login_k8s(role => $role, jwt => $jwt)
+
+Performs a Kubernetes ServiceAccount login against
+C<v1/auth/kubernetes/login>. C<role> is required. C<jwt> defaults to the
+in-pod ServiceAccount token at
+C</var/run/secrets/kubernetes.io/serviceaccount/token>. On success the
+returned C<client_token> is stored in L</token> and the full C<auth> hashref
+is returned.
+
+=method health
+
+Returns the parsed C</v1/sys/health> response, or C<undef> if the request
+fails (sealed/uninitialised servers return non-2xx — that is fine here, the
+caller usually just wants to know I<something> answered).
+
+=method init(secret_shares => $n, secret_threshold => $n)
+
+Initialises an uninitialised server. Both arguments default to C<1>. Use
+this for dev/test only.
+
+=method unseal($key)
+
+Submits a single unseal key share.
+
+=method enable_engine($path, $type)
+
+Mounts a secrets engine at C<$path> with the given C<$type> (e.g.
+C<kv-v2>).
+
+=cut
