@@ -1,6 +1,6 @@
 Revision history for WWW-OpenBao
 
-{{$NEXT}}
+0.001     2026-04-25 04:36:23Z
 
  - Initial release extracted from HI::Daemon
  - HTTP client for OpenBao / HashiCorp Vault KV v2 API
