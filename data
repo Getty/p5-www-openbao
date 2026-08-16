@@ -1,0 +1,14 @@
+---
+class: standard
+created: 2026-08-16T17:49:31Z
+id: 4
+priority: medium
+status: backlog
+tags:
+- api
+- operability
+title: health() cannot distinguish sealed / standby / uninitialised from unreachable
+updated: 2026-08-16T17:49:31Z
+---
+
+GET /v1/sys/health encodes the answer in the status code: 200 active, 429 standby, 501 uninitialised, 503 sealed. Only 200 is 2xx, so _request croaks and health() evals it to undef -- collapsing exactly the states an operator wants to tell apart. Options: widen _request to hand the status back for this call, or pass standbyok=true/sealedcode=200/uninitcode=200 and parse the body. Needs the offline test harness first (task 1).
