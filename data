@@ -1,0 +1,14 @@
+---
+class: standard
+created: 2026-08-16T17:49:25Z
+id: 3
+priority: medium
+status: backlog
+tags:
+- api
+- correctness
+title: secret_exists() reports false on 403 permission denied
+updated: 2026-08-16T17:49:25Z
+---
+
+secret_exists evals the metadata read and treats any exception as "no". A caller whose policy forbids the path is told the secret does not exist. Vault/OpenBao deliberately answer 403 for paths that do exist. Decide whether to let 403 propagate or return a tri-state; either way document it in the POD. Consumers (goldmine, hiplatform) branch on this.
