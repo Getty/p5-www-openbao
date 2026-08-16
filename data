@@ -1,0 +1,14 @@
+---
+class: standard
+created: 2026-08-16T17:48:32Z
+id: 1
+priority: high
+status: backlog
+tags:
+- tests
+- foundation
+title: Offline request/response test coverage for the _request seam
+updated: 2026-08-16T17:48:32Z
+---
+
+The suite only covers construction and path building. Stub the lazy _http attribute with an object whose request() returns a canned { status, success, content } hashref and cover: 2xx JSON decode, 204 empty body -> {}, 404 -> undef, non-2xx -> croak with method/path in the message. This is the foundation every other ticket here needs.
