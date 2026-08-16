@@ -1,0 +1,14 @@
+---
+class: standard
+created: 2026-08-16T17:48:37Z
+id: 2
+priority: high
+status: backlog
+tags:
+- coordination
+- drift
+title: hi-proto carries a vendored copy of WWW::OpenBao
+updated: 2026-08-16T17:48:37Z
+---
+
+hi-proto/lib/WWW/OpenBao.pm is the pre-extraction original: byte-identical code today minus $VERSION and POD, and hi-proto does not depend on this distribution in its cpanfile. Any fix here silently does not reach it. Decide: make hi-proto depend on WWW::OpenBao and delete the copy, or document the fork. Cross-repo work = a ticket on the hi-proto board, never an edit from here.
