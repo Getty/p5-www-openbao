@@ -1,0 +1,13 @@
+---
+class: standard
+created: 2026-08-16T17:50:14Z
+id: 7
+priority: low
+status: backlog
+tags:
+- api
+title: Kubernetes auth mount path is hardcoded
+updated: 2026-08-16T17:50:14Z
+---
+
+login_k8s posts to v1/auth/kubernetes/login. The mount path is configurable in OpenBao and auth/kubernetes is only the default -- a cluster that mounted the method elsewhere cannot be reached. Add an attribute or argument for the auth mount, defaulting to the current value.
