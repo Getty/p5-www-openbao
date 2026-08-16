@@ -1,0 +1,14 @@
+---
+class: standard
+created: 2026-08-16T17:50:03Z
+id: 5
+priority: medium
+status: backlog
+tags:
+- api
+- coverage
+title: Only the irreversible delete is exposed
+updated: 2026-08-16T17:50:03Z
+---
+
+KV v2 has three delete levels: soft (DELETE data/:path, POST delete/:path), destroy a version (PUT destroy/:path), and key+all-versions (DELETE metadata/:path). delete_secret implements only level 3, the irreversible one, under a name that reads like level 1. Add the soft delete / undelete / destroy methods, and make the POD state which level each performs.
