@@ -1,0 +1,14 @@
+---
+class: standard
+created: 2026-08-16T17:50:09Z
+id: 6
+priority: low
+status: backlog
+tags:
+- api
+- coverage
+title: read_secret() cannot request a specific version
+updated: 2026-08-16T17:50:09Z
+---
+
+GET /v1/:mount/data/:path?version=N returns an older version; read_secret always takes the latest and drops data.metadata (which carries version, destroyed, created_time). Adding a version argument is easy; deciding how to surface metadata without changing the existing return shape is the actual design question.
