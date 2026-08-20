@@ -5,10 +5,10 @@ model: sonnet
 allowed-tools: Read, Bash, Glob, Grep
 briefing:
   skills:
-    - perl-release-author-getty
+    - getty-perl-release-author-getty
     - perl-release-dist-ini
     - www-openbao-perl
-    - karr
+    - kanban-issues-karr-cli
 ---
 
 You are the www-openbao-release-checker for **WWW-OpenBao**. Conventions from the skills

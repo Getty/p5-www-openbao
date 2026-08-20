@@ -7,7 +7,7 @@ briefing:
   skills:
     - www-openbao-perl
     - openbao-general
-    - perl-release-author-getty
+    - getty-perl-release-author-getty
 ---
 
 You are the www-openbao-doc-writer for **WWW-OpenBao**.

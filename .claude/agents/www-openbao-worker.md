@@ -7,10 +7,10 @@ briefing:
   skills:
     - www-openbao-perl
     - openbao-general
-    - perl-core
-    - perl-moo
-    - perl-release-author-getty
-    - karr
+    - getty-perl-core
+    - getty-perl-moo
+    - getty-perl-release-author-getty
+    - kanban-issues-karr-cli
 ---
 
 You are the www-openbao-worker for **WWW-OpenBao**, the minimal Perl HTTP client for

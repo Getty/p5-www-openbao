@@ -7,8 +7,8 @@ briefing:
   skills:
     - www-openbao-perl
     - openbao-general
-    - perl-core
-    - karr
+    - getty-perl-core
+    - kanban-issues-karr-cli
 ---
 
 You are the www-openbao-test-writer.

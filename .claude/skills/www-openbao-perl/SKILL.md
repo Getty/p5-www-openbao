@@ -1,6 +1,6 @@
 ---
 name: www-openbao-perl
-description: WWW::OpenBao repo conventions — the single-file Moo client, the _request seam every call goes through, the croak-on-error/undef-on-404 contract, path helpers, the offline test rule, and the deliberate minimalism of the dependency set. Load for any edit under lib/WWW/OpenBao.pm or t/.
+description: Load for any edit under lib/WWW/OpenBao.pm or its tests — the single-file Moo client, the _request seam, the croak-on-error and undef-on-404 contract, the offline test rule.
 ---
 
 # WWW::OpenBao — repo conventions

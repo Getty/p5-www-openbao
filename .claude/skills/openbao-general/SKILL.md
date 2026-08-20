@@ -1,6 +1,6 @@
 ---
 name: openbao-general
-description: OpenBao / HashiCorp Vault HTTP API domain knowledge — KV v2 path and response shapes, the soft-delete vs destroy ladder, LIST/SCAN, Kubernetes auth login, sys/* bootstrap endpoints and their non-2xx status semantics. Load when implementing or reviewing any client that talks to OpenBao or Vault.
+description: Load when implementing or reviewing a client that talks to OpenBao or Vault — KV v2 shapes, the soft-delete vs destroy ladder, LIST/SCAN, Kubernetes auth, sys/* endpoints.
 ---
 
 # OpenBao / Vault HTTP API
