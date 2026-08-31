@@ -47,7 +47,7 @@ Prose in `README.md` and `Changes` notes are not.
 ## Coordination — karr board
 
 Ticket coordination is the orchestrating agent's job, so `karr` is always in scope —
-don't invoke the `karr` skill first, just use it. Git-native kanban; state lives in
+don't invoke the `kanban-issues-karr-cli` skill first, just use it. Git-native kanban; state lives in
 `refs/karr/*`; this repo has its own board.
 
 - `karr list --compact` / `karr board` — open work · `karr show ID` — detail
@@ -99,7 +99,7 @@ explicitly says to handle a specific issue.
 ## Perl and API specifics — reference, don't restate
 
 Module loading, Moo patterns, dependency pinning, `[@Author::GETTY]` release metadata and
-POD directives live in skills `perl-core`, `perl-moo`, `perl-release-dist-ini` and
-`perl-release-author-getty`. Repo conventions are in `www-openbao-perl`; the OpenBao/Vault
+POD directives live in skills `getty-perl-core`, `getty-perl-moo`, `perl-release-dist-ini` and
+`getty-perl-release-author-getty`. Repo conventions are in `www-openbao-perl`; the OpenBao/Vault
 HTTP API itself is in `openbao-general`. All force-loaded for `www-openbao-*` agents. Do
 not duplicate that content here.
