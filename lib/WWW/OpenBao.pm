@@ -194,9 +194,13 @@ It is intentionally small — no caching, no lease renewal, no policy
 management. If you need those, reach for a heavier client; if you just want
 to talk to Vault/OpenBao from Perl, this is enough.
 
-All methods C<croak> on non-2xx responses, with the single exception of
-C<read_secret> which returns C<undef> on 404 so callers can treat "secret not
-found" as a soft miss.
+All methods C<croak> on non-2xx responses, but that is a property of the
+shared C<_request> seam, not of any one method: there, C<404> is never a
+C<croak>, it comes back as C<undef> to whichever method called it.
+L</read_secret> is only the most visible case of this seam-wide "soft miss"
+rule — L</list_secrets> turns that C<undef> into an empty arrayref instead,
+and L</secret_exists> is built directly on the same 404-as-C<undef>
+semantics.
 
 =attr endpoint
 

@@ -42,8 +42,11 @@ $bao->health;                             # /v1/sys/health
 
 ## Error handling
 
-All methods `croak` on non-2xx responses (except `read_secret`, which returns
-`undef` on 404 so callers can treat "secret not found" as a soft miss).
+All methods `croak` on non-2xx responses. The single exception is `404`,
+which the shared `_request` seam turns into `undef` for whichever method
+called it — not just `read_secret` (its most visible case), but also
+`list_secrets` (which turns that into an empty arrayref) and `secret_exists`
+(built directly on this).
 
 ## License
 
