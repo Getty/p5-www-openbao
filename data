@@ -1,0 +1,18 @@
+---
+class: standard
+completed: 2026-09-09T07:19:14Z
+created: 2026-09-09T07:07:59Z
+id: 8
+priority: low
+started: 2026-09-09T07:17:18Z
+status: done
+tags:
+- docs
+- correctness
+title: DESCRIPTION overstates read_secret as the only undef-on-404 method
+updated: 2026-09-09T07:19:14Z
+---
+
+The POD DESCRIPTION says all methods croak on non-2xx with the single exception of read_secret, which returns undef on 404. That is imprecise: _request returns undef on a 404 for every method routed through it, list_secrets turns a missing path into an empty arrayref, and secret_exists keys off definedness; the new soft_delete_secret/undelete_secret/destroy_secret also see undef on 404. Tighten the DESCRIPTION to describe the actual _request 404 behaviour accurately. Documentation only, no behaviour change. Found while implementing ticket 5.
+
+2026-09-09 07:19 Done. Corrected the DESCRIPTION POD in the module and the matching README Error handling paragraph. Old text called read_secret the single exception to croak-on-non-2xx; accurate contract is that the shared _request seam turns a 404 into undef for every method it routes. read_secret is the most visible case, list_secrets turns it into an empty arrayref, and secret_exists is built on the same 404-as-undef semantics. Documentation only, no behaviour change. dzil test and prove -lr t both green (author-pod-syntax passes, POD weaves). Commit be52e1c.
