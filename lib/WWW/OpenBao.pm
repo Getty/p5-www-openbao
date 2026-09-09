@@ -18,6 +18,9 @@ sub _build__http { HTTP::Tiny->new(timeout => 10) }
 # KV v2 paths
 sub _kv_path          { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/data/$p" }
 sub _kv_metadata_path { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/metadata/$p" }
+sub _kv_delete_path   { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/delete/$p" }
+sub _kv_undelete_path { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/undelete/$p" }
+sub _kv_destroy_path  { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/destroy/$p" }
 
 # Core HTTP
 sub _request {
@@ -51,10 +54,36 @@ sub write_secret {
   return $self->_request('POST', $self->_kv_path($path), { data => $data });
 }
 
-# KV v2: delete secret (all versions + metadata)
+# KV v2: delete secret (all versions + metadata) — ladder level 3, irreversible
 sub delete_secret {
   my ($self, $path) = @_;
   return $self->_request('DELETE', $self->_kv_metadata_path($path));
+}
+
+# KV v2 delete ladder level 1 (reversible soft delete). Without versions,
+# soft-deletes the latest version via DELETE data/; with a version list,
+# soft-deletes exactly those versions via POST delete/. Reverse with
+# undelete_secret.
+sub soft_delete_secret {
+  my ($self, $path, @versions) = @_;
+  return $self->_request('POST', $self->_kv_delete_path($path), { versions => \@versions })
+    if @versions;
+  return $self->_request('DELETE', $self->_kv_path($path));
+}
+
+# KV v2: restore soft-deleted versions (reverses soft_delete_secret)
+sub undelete_secret {
+  my ($self, $path, @versions) = @_;
+  croak "undelete_secret requires at least one version" unless @versions;
+  return $self->_request('POST', $self->_kv_undelete_path($path), { versions => \@versions });
+}
+
+# KV v2 delete ladder level 2 (irreversible): permanently destroy named
+# versions via PUT destroy/. The version bytes are gone; key and metadata stay.
+sub destroy_secret {
+  my ($self, $path, @versions) = @_;
+  croak "destroy_secret requires at least one version" unless @versions;
+  return $self->_request('PUT', $self->_kv_destroy_path($path), { versions => \@versions });
 }
 
 # KV v2: list secrets at path
@@ -189,8 +218,37 @@ response.
 
 =method delete_secret($path)
 
-Deletes the secret I<and> its metadata (all versions). This is the
-destructive C<DELETE /metadata/...> form, not the soft-delete.
+B<Delete ladder level 3 — irreversible, destroys everything.> Removes the key
+together with all of its versions and history via
+C<DELETE /E<lt>mountE<gt>/metadata/...>. This is the most destructive of the KV
+v2 delete operations and there is no undo: despite the plain name it is I<not>
+the soft delete a caller might expect. For the reversible level-1 soft delete
+of the latest (or of named) versions use L</soft_delete_secret>, reversed by
+L</undelete_secret>; to permanently destroy specific versions while keeping the
+key and its metadata use L</destroy_secret> (level 2).
+
+=method soft_delete_secret($path, @versions)
+
+B<Delete ladder level 1 — reversible.> Soft-deletes KV v2 versions: they then
+read back as C<404>, but the data is retained and can be restored with
+L</undelete_secret>. Called with no C<@versions> it soft-deletes the latest
+version via C<DELETE /E<lt>mountE<gt>/data/...>; called with one or more version
+numbers it soft-deletes exactly those via C<POST /E<lt>mountE<gt>/delete/...>.
+
+=method undelete_secret($path, @versions)
+
+Restores versions previously soft-deleted by L</soft_delete_secret>, via
+C<POST /E<lt>mountE<gt>/undelete/...>. At least one version number is required
+(it C<croak>s otherwise). This reverses a level-1 soft delete only — it cannot
+bring back versions removed by L</destroy_secret> or L</delete_secret>.
+
+=method destroy_secret($path, @versions)
+
+B<Delete ladder level 2 — irreversible.> Permanently destroys the named
+versions via C<PUT /E<lt>mountE<gt>/destroy/...>: their contents are gone for
+good and cannot be undeleted. The key itself and its metadata survive, so this
+is narrower than L</delete_secret> (level 3) but just as final for the versions
+it names. At least one version number is required (it C<croak>s otherwise).
 
 =method list_secrets($path)
 

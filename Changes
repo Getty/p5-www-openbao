@@ -4,6 +4,10 @@ Revision history for WWW-OpenBao
 
  - Add k8s_auth_mount attribute (default 'kubernetes') so login_k8s can
    reach a Kubernetes auth method mounted at a non-default path
+ - Expose the reversible KV v2 delete levels: soft_delete_secret (level 1,
+   soft-delete latest or named versions), undelete_secret (restore) and
+   destroy_secret (level 2, destroy named versions). delete_secret is
+   unchanged (level 3, irreversible) and its POD now says so
 
 0.001     2026-04-25 04:36:23Z
 
