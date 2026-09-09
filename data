@@ -1,0 +1,18 @@
+---
+class: standard
+completed: 2026-09-09T06:56:41Z
+created: 2026-08-16T17:48:32Z
+id: 1
+priority: high
+started: 2026-09-09T06:53:05Z
+status: done
+tags:
+- tests
+- foundation
+title: Offline request/response test coverage for the _request seam
+updated: 2026-09-09T06:57:24Z
+---
+
+The suite only covers construction and path building. Stub the lazy _http attribute with an object whose request() returns a canned { status, success, content } hashref and cover: 2xx JSON decode, 204 empty body -> {}, 404 -> undef, non-2xx -> croak with method/path in the message. This is the foundation every other ticket here needs.
+
+2026-09-09 06:57 Done. Added offline tests in file 20-request.t stubbing the lazy _http attribute. Covers 2xx JSON decode, empty-body 204 giving empty hashref, 404 giving undef independent of success flag, and non-2xx croak naming method and path. Suite green via prove -lr t. Commit 952e395.
