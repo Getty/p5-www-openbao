@@ -120,10 +120,19 @@ sub _read_sa_token {
   return <$fh>;
 }
 
-# Sys: health check
+# Sys: health check. standbyok/perfstandbyok/sealedcode/uninitcode flatten the
+# operational states that otherwise answer with a non-2xx status (standby 429,
+# performance standby, sealed 503, uninitialised 501) to a 200, so _request
+# decodes the body instead of croaking — the caller reads the state out of the
+# returned hashref (initialized, sealed, standby, ...). The eval still maps a
+# genuinely unreachable server (network error, or non-2xx despite the codes)
+# to undef, so "no answer at all" stays distinct from any reported state.
 sub health {
   my ($self) = @_;
-  return eval { $self->_request('GET', 'v1/sys/health') };
+  return eval {
+    $self->_request('GET',
+      'v1/sys/health?standbyok=true&perfstandbyok=true&sealedcode=200&uninitcode=200')
+  };
 }
 
 # Sys: initialize vault (first time)
@@ -272,9 +281,20 @@ is returned.
 
 =method health
 
-Returns the parsed C</v1/sys/health> response, or C<undef> if the request
-fails (sealed/uninitialised servers return non-2xx — that is fine here, the
-caller usually just wants to know I<something> answered).
+Returns the decoded C</v1/sys/health> response as a hashref for B<every>
+reachable server, whatever its seal, standby or init state. The request is made
+with C<standbyok=true&perfstandbyok=true&sealedcode=200&uninitcode=200>, so
+OpenBao/Vault answers C<200> — and therefore a body — for the states that
+otherwise carry their answer only in a non-2xx status code: standby (C<429>),
+performance standby, sealed (C<503>) and uninitialised (C<501>). Read the state
+out of the returned fields — C<initialized>, C<sealed>, C<standby>,
+C<performance_standby>, C<version> and the rest of the health payload.
+
+Because of this, a sealed, uninitialised or standby server yields an
+inspectable hashref rather than C<undef>: those states are no longer collapsed
+together as they were previously. C<undef> now means only that the server did
+not answer at all — a network-level failure, or a non-2xx status returned in
+spite of the flattening parameters.
 
 =method init(secret_shares => $n, secret_threshold => $n)
 

@@ -8,6 +8,10 @@ Revision history for WWW-OpenBao
    soft-delete latest or named versions), undelete_secret (restore) and
    destroy_secret (level 2, destroy named versions). delete_secret is
    unchanged (level 3, irreversible) and its POD now says so
+ - health now requests with standbyok/perfstandbyok/sealedcode/uninitcode so
+   every reachable server returns a hashref; sealed, uninitialised and standby
+   states are readable from its fields instead of collapsing to undef, which
+   now means only that the server did not answer
 
 0.001     2026-04-25 04:36:23Z
 
