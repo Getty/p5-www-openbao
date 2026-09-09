@@ -7,10 +7,11 @@ use JSON::MaybeXS;
 use Carp qw(croak);
 use namespace::clean;
 
-has endpoint  => (is => 'ro', required => 1);
-has token     => (is => 'rw', default => sub { '' });
-has kv_mount  => (is => 'ro', default => sub { 'secret' });
-has _http     => (is => 'lazy');
+has endpoint       => (is => 'ro', required => 1);
+has token          => (is => 'rw', default => sub { '' });
+has kv_mount       => (is => 'ro', default => sub { 'secret' });
+has k8s_auth_mount => (is => 'ro', default => sub { 'kubernetes' });
+has _http          => (is => 'lazy');
 
 sub _build__http { HTTP::Tiny->new(timeout => 10) }
 
@@ -76,7 +77,7 @@ sub login_k8s {
   my ($self, %args) = @_;
   my $role = $args{role} // croak "login_k8s requires 'role'";
   my $jwt  = $args{jwt}  // _read_sa_token();
-  my $resp = $self->_request('POST', 'v1/auth/kubernetes/login', {
+  my $resp = $self->_request('POST', 'v1/auth/' . $self->k8s_auth_mount . '/login', {
     role => $role, jwt => $jwt,
   });
   $self->token($resp->{auth}{client_token});
@@ -169,6 +170,13 @@ overwrites it on success.
 
 Mount path of the KV v2 engine. Defaults to C<secret>.
 
+=attr k8s_auth_mount
+
+Mount path of the Kubernetes auth method. Defaults to C<kubernetes>, the
+OpenBao/Vault default. Set it when the method is mounted elsewhere — e.g.
+C<k8s_auth_mount =E<gt> 'kubernetes-prod'> makes L</login_k8s> post to
+C<v1/auth/kubernetes-prod/login>.
+
 =method read_secret($path)
 
 Returns the C<data.data> hashref for a KV v2 secret, or C<undef> if the path
@@ -196,9 +204,10 @@ the secret data.
 
 =method login_k8s(role => $role, jwt => $jwt)
 
-Performs a Kubernetes ServiceAccount login against
-C<v1/auth/kubernetes/login>. C<role> is required. C<jwt> defaults to the
-in-pod ServiceAccount token at
+Performs a Kubernetes ServiceAccount login. Posts to
+C<v1/auth/E<lt>k8s_auth_mountE<gt>/login>, i.e. C<v1/auth/kubernetes/login> by
+default; see L</k8s_auth_mount> to reach a method mounted elsewhere. C<role>
+is required. C<jwt> defaults to the in-pod ServiceAccount token at
 C</var/run/secrets/kubernetes.io/serviceaccount/token>. On success the
 returned C<client_token> is stored in L</token> and the full C<auth> hashref
 is returned.

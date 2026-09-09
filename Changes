@@ -2,6 +2,9 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - Add k8s_auth_mount attribute (default 'kubernetes') so login_k8s can
+   reach a Kubernetes auth method mounted at a non-default path
+
 0.001     2026-04-25 04:36:23Z
 
  - Initial release extracted from HI::Daemon
