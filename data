@@ -1,0 +1,18 @@
+---
+class: standard
+completed: 2026-09-09T07:12:30Z
+created: 2026-08-16T17:49:31Z
+id: 4
+priority: medium
+started: 2026-09-09T07:08:35Z
+status: done
+tags:
+- api
+- operability
+title: health() cannot distinguish sealed / standby / uninitialised from unreachable
+updated: 2026-09-09T07:12:30Z
+---
+
+GET /v1/sys/health encodes the answer in the status code: 200 active, 429 standby, 501 uninitialised, 503 sealed. Only 200 is 2xx, so _request croaks and health() evals it to undef -- collapsing exactly the states an operator wants to tell apart. Options: widen _request to hand the status back for this call, or pass standbyok=true/sealedcode=200/uninitcode=200 and parse the body. Needs the offline test harness first (task 1).
+
+2026-09-09 07:12 Done. health now passes standbyok, perfstandbyok, sealedcode 200 and uninitcode 200 so every reachable server answers 200 and the body is decoded. Returns the health hashref for any reachable server (fields initialized, sealed, standby, performance_standby, version); undef now means only that the server did not answer. The _request seam is untouched, query string rides the path argument, eval retained. POD rewritten, Changes noted. Offline test 50-health.t covers the query params, sealed uninit and standby bodies giving hashrefs, and undef for a 5xx and a 599 transport failure. prove -lr t green with 63 tests. Commit b5ff18f.
