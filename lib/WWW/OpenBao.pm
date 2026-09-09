@@ -40,10 +40,14 @@ sub _request {
   return $resp->{content} ? decode_json($resp->{content}) : {};
 }
 
-# KV v2: read secret data
+# KV v2: read secret data. Latest version by default; version => $n reads an
+# older version via GET data/<path>?version=N. defined (not truthy) so an
+# explicit version => 0 is honoured as a real argument, not dropped as "none".
 sub read_secret {
-  my ($self, $path) = @_;
-  my $resp = $self->_request('GET', $self->_kv_path($path));
+  my ($self, $path, %args) = @_;
+  my $kv_path = $self->_kv_path($path);
+  $kv_path .= '?version=' . $args{version} if defined $args{version};
+  my $resp = $self->_request('GET', $kv_path);
   return undef unless $resp;
   return $resp->{data}{data};
 }
@@ -215,10 +219,13 @@ OpenBao/Vault default. Set it when the method is mounted elsewhere — e.g.
 C<k8s_auth_mount =E<gt> 'kubernetes-prod'> makes L</login_k8s> post to
 C<v1/auth/kubernetes-prod/login>.
 
-=method read_secret($path)
+=method read_secret($path, version => $n)
 
 Returns the C<data.data> hashref for a KV v2 secret, or C<undef> if the path
-does not exist.
+does not exist. By default it reads the latest version; pass
+C<version =E<gt> $n> to read a specific earlier version instead, which appends
+C<?version=N> to the C<GET .../data/...> request. C<undef> (a soft-deleted or
+absent version both answer C<404>) still means "no readable value".
 
 =method write_secret($path, \%data)
 
