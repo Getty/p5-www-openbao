@@ -1,0 +1,18 @@
+---
+class: standard
+completed: 2026-09-09T07:16:24Z
+created: 2026-08-16T17:50:09Z
+id: 6
+priority: low
+started: 2026-09-09T07:13:20Z
+status: done
+tags:
+- api
+- coverage
+title: read_secret() cannot request a specific version
+updated: 2026-09-09T07:16:24Z
+---
+
+GET /v1/:mount/data/:path?version=N returns an older version; read_secret always takes the latest and drops data.metadata (which carries version, destroyed, created_time). Adding a version argument is easy; deciding how to surface metadata without changing the existing return shape is the actual design question.
+
+2026-09-09 07:16 Done (version-argument part). read_secret now accepts an optional named version argument. It appends a version query parameter to the data read; uses defined so version 0 is honoured; a bare read_secret call is byte-identical to before; return shape unchanged (data.data hashref or undef on 404); _request seam untouched. POD and Changes updated. Offline test 60-read-version.t covers no-version, versioned, version 0, custom mount and 404. prove -lr t green with 73 tests. Commit c6ad4c3. The separate design question of surfacing data.metadata without changing the return shape was split to karr ticket 9 for a maintainer decision (boundary, not decided autonomously).
