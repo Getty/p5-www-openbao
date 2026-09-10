@@ -167,9 +167,7 @@ to talk to Vault/OpenBao from Perl, this is enough.
 Most methods C<croak> on non-2xx responses. The deliberate exception is a
 C<404>, treated as a soft miss: C<read_secret> and C<read_secret_metadata>
 return C<undef>, C<list_secrets> an empty arrayref, and C<secret_exists> false.
-Every other non-2xx — notably a
-C<403> policy denial — croaks, so it can be caught rather than mistaken for
-"not found".
+Every other non-2xx croaks.
 
 =attr endpoint
 
@@ -217,11 +215,8 @@ if the path is missing.
 
 =method secret_exists($path)
 
-True if the given path exists, false if it does not (a C<404>). Does not fetch
-the secret data. A permission error (C<403>) — which OpenBao returns for a path
-that may well exist but the current token's policy forbids — is B<not> swallowed
-into a false; it propagates as a croak, so a caller can tell "not allowed to
-see" apart from "not there". Any other non-2xx likewise propagates.
+True if the given path exists, false if it does not. Does not fetch the secret
+data.
 
 =method login_k8s(role => $role, jwt => $jwt)
 
