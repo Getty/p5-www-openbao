@@ -1,0 +1,18 @@
+---
+claimed_at: 2026-09-10T03:41:08Z
+claimed_by: worker-c
+class: standard
+completed: 2026-09-10T03:41:08Z
+created: 2026-09-09T07:13:12Z
+id: 9
+priority: low
+started: 2026-09-10T03:38:10Z
+status: done
+tags:
+- api
+- design
+title: read_secret drops data.metadata (version/destroyed/created_time)
+updated: 2026-09-10T03:41:08Z
+---
+
+read_secret returns only data.data and discards data.metadata, which carries the version number, destroyed flag and created_time. Surfacing that metadata is useful (especially after a versioned read) but must not change read_secret existing return shape (the bare data hashref), which consumers (goldmine, hiplatform) depend on. This is a design decision, not a mechanical change: options include a separate method (e.g. read_secret_metadata, or a read that returns both data and metadata), an optional out-parameter, or a wantarray tuple. Needs a maintainer decision and POD. Split out from ticket 6, which delivered the version argument; this is the design half of that ticket, left for Getty to decide.
