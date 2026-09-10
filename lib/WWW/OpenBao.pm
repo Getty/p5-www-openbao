@@ -44,6 +44,16 @@ sub read_secret {
   return $resp->{data}{data};
 }
 
+# KV v2: read the metadata (version / created_time / destroyed / ...) that
+# rides along the same data/ read. Separate entry point on purpose so
+# read_secret keeps returning the bare data.data hashref consumers depend on.
+sub read_secret_metadata {
+  my ($self, $path) = @_;
+  my $resp = $self->_request('GET', $self->_kv_path($path));
+  return undef unless $resp;
+  return $resp->{data}{metadata};
+}
+
 # KV v2: write secret data
 sub write_secret {
   my ($self, $path, $data) = @_;
@@ -136,6 +146,7 @@ __END__
 
   $bao->write_secret('app/db', { user => 'app', pass => 'hunter2' });
   my $creds = $bao->read_secret('app/db');
+  my $meta  = $bao->read_secret_metadata('app/db');  # version, created_time, ...
   my $keys  = $bao->list_secrets('app/');
   $bao->delete_secret('app/db');
 
@@ -154,8 +165,9 @@ management. If you need those, reach for a heavier client; if you just want
 to talk to Vault/OpenBao from Perl, this is enough.
 
 Most methods C<croak> on non-2xx responses. The deliberate exception is a
-C<404>, treated as a soft miss: C<read_secret> returns C<undef>, C<list_secrets>
-an empty arrayref, and C<secret_exists> false. Every other non-2xx — notably a
+C<404>, treated as a soft miss: C<read_secret> and C<read_secret_metadata>
+return C<undef>, C<list_secrets> an empty arrayref, and C<secret_exists> false.
+Every other non-2xx — notably a
 C<403> policy denial — croaks, so it can be caught rather than mistaken for
 "not found".
 
@@ -177,6 +189,16 @@ Mount path of the KV v2 engine. Defaults to C<secret>.
 
 Returns the C<data.data> hashref for a KV v2 secret, or C<undef> if the path
 does not exist.
+
+=method read_secret_metadata($path)
+
+Returns the C<data.metadata> hashref that KV v2 returns alongside the value on
+the same C<GET .../data/...> read — the C<version> number, C<created_time>,
+C<destroyed> flag and C<custom_metadata> — or C<undef> if the path does not
+exist. This is a separate entry point on purpose: L</read_secret> keeps
+returning the bare C<data.data> hashref, so callers that only want the values
+are unaffected. Note it reads the C<data/> endpoint (the metadata that
+accompanies a value read), not the C<metadata/> version-history endpoint.
 
 =method write_secret($path, \%data)
 
