@@ -2,6 +2,9 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - secret_exists now propagates a 403 (permission denied) instead of reporting
+   the path as absent; only a real 404 is treated as "does not exist"
+
 0.001     2026-04-25 04:36:23Z
 
  - Initial release extracted from HI::Daemon

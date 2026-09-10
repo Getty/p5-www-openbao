@@ -64,11 +64,13 @@ sub list_secrets {
   return $resp->{data}{keys} // [];
 }
 
-# KV v2: check if secret exists without fetching data
+# KV v2: check if secret exists without fetching data. Only a 404 (absent
+# path) is a soft "no"; a 403 (policy forbids a path that may well exist) and
+# any other non-2xx propagate via _request's croak, so callers can tell
+# "not allowed to see" apart from "not there".
 sub secret_exists {
   my ($self, $path) = @_;
-  my $resp = eval { $self->_request('GET', $self->_kv_metadata_path($path)) };
-  return defined $resp;
+  return defined $self->_request('GET', $self->_kv_metadata_path($path));
 }
 
 # Auth: Kubernetes ServiceAccount login
@@ -151,9 +153,11 @@ It is intentionally small — no caching, no lease renewal, no policy
 management. If you need those, reach for a heavier client; if you just want
 to talk to Vault/OpenBao from Perl, this is enough.
 
-All methods C<croak> on non-2xx responses, with the single exception of
-C<read_secret> which returns C<undef> on 404 so callers can treat "secret not
-found" as a soft miss.
+Most methods C<croak> on non-2xx responses. The deliberate exception is a
+C<404>, treated as a soft miss: C<read_secret> returns C<undef>, C<list_secrets>
+an empty arrayref, and C<secret_exists> false. Every other non-2xx — notably a
+C<403> policy denial — croaks, so it can be caught rather than mistaken for
+"not found".
 
 =attr endpoint
 
@@ -191,8 +195,11 @@ if the path is missing.
 
 =method secret_exists($path)
 
-True if metadata exists for the given path, false otherwise. Does not fetch
-the secret data.
+True if the given path exists, false if it does not (a C<404>). Does not fetch
+the secret data. A permission error (C<403>) — which OpenBao returns for a path
+that may well exist but the current token's policy forbids — is B<not> swallowed
+into a false; it propagates as a croak, so a caller can tell "not allowed to
+see" apart from "not there". Any other non-2xx likewise propagates.
 
 =method login_k8s(role => $role, jwt => $jwt)
 

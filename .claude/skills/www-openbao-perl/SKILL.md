@@ -59,9 +59,10 @@ These are properties of the current code, not accidents to silently repair — e
 a decision a change has to knowingly keep or replace, and if you replace one, say so in
 `Changes`:
 
-- `secret_exists` returns false on **403** as well as 404: it `eval`s the metadata read
-  and treats any exception as "no". A caller with insufficient policy is told the secret
-  does not exist.
+- `secret_exists` maps only a **404** to false. It does a plain metadata `GET` and asks
+  whether `_request` returned something defined, so a **403** (and any other non-2xx)
+  propagates as a croak rather than being reported as "does not exist" — a policy-denied
+  path is no longer mistaken for an absent one.
 - `health` `eval`s and yields `undef` for every non-2xx, which for `/sys/health` means
   sealed (503), uninitialised (501) and standby (429) are indistinguishable from an
   unreachable host. See `openbao-general` for why those codes *are* the answer.
