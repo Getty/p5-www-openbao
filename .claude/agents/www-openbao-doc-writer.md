@@ -5,7 +5,7 @@ model: sonnet
 allowed-tools: Read, Edit, Grep, Glob
 briefing:
   skills:
-    - www-openbao-perl
+    - www-openbao-core
     - openbao-general
     - getty-perl-release-author-getty
 ---

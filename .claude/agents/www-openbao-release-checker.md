@@ -7,7 +7,7 @@ briefing:
   skills:
     - getty-perl-release-author-getty
     - perl-release-dist-ini
-    - www-openbao-perl
+    - www-openbao-core
     - kanban-issues-karr-cli
 ---
 

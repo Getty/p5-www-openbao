@@ -1,5 +1,5 @@
 ---
-name: www-openbao-perl
+name: www-openbao-core
 description: Load for any edit under lib/WWW/OpenBao.pm or its tests — the single-file Moo client, the _request seam, the croak-on-error and undef-on-404 contract, the offline test rule.
 ---
 

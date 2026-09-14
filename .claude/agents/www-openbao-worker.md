@@ -5,7 +5,7 @@ model: inherit
 allowed-tools: Read, Edit, Write, Bash, Glob, Grep
 briefing:
   skills:
-    - www-openbao-perl
+    - www-openbao-core
     - openbao-general
     - getty-perl-core
     - getty-perl-moo

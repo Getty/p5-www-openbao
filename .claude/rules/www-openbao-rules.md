@@ -100,6 +100,6 @@ explicitly says to handle a specific issue.
 
 Module loading, Moo patterns, dependency pinning, `[@Author::GETTY]` release metadata and
 POD directives live in skills `getty-perl-core`, `getty-perl-moo`, `perl-release-dist-ini` and
-`getty-perl-release-author-getty`. Repo conventions are in `www-openbao-perl`; the OpenBao/Vault
+`getty-perl-release-author-getty`. Repo conventions are in `www-openbao-core`; the OpenBao/Vault
 HTTP API itself is in `openbao-general`. All force-loaded for `www-openbao-*` agents. Do
 not duplicate that content here.
