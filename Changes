@@ -1,5 +1,7 @@
 Revision history for WWW-OpenBao
 
+{{$NEXT}}
+
 0.002     2026-09-18 02:15:17Z
 
  - secret_exists now propagates a 403 (permission denied) instead of reporting
