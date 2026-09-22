@@ -1,0 +1,13 @@
+---
+class: standard
+created: 2026-09-22T19:21:49Z
+id: 12
+priority: low
+status: backlog
+tags:
+- api
+title: endpoint with trailing slash produces // in URL
+updated: 2026-09-22T19:21:49Z
+---
+
+POD says no trailing slash, but nothing enforces it. Strip one trailing / in _request or via a coerce.
