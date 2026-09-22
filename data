@@ -1,0 +1,13 @@
+---
+class: standard
+created: 2026-09-22T19:21:44Z
+id: 11
+priority: low
+status: backlog
+tags:
+- api
+title: KV paths are not URI-escaped
+updated: 2026-09-22T19:21:44Z
+---
+
+read_secret/write_secret/... interpolate $path raw into the URL; keys containing space, ?, # or % break. Escape each segment but keep /. Check consumers do not already pass pre-escaped paths.
