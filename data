@@ -1,0 +1,14 @@
+---
+class: standard
+created: 2026-09-22T19:21:58Z
+id: 14
+priority: low
+status: backlog
+tags:
+- api
+- docs
+title: Verify health query params against OpenBao
+updated: 2026-09-22T19:21:58Z
+---
+
+health sends standbyok/perfstandbyok/sealedcode/uninitcode. perfstandbyok is Vault Enterprise; confirm OpenBao ignores unknown params and the flattening works on OpenBao.
