@@ -1,0 +1,13 @@
+---
+class: standard
+created: 2026-09-22T19:21:54Z
+id: 13
+priority: low
+status: backlog
+tags:
+- errors
+title: Non-JSON 2xx body dies with a bare decode_json error
+updated: 2026-09-22T19:21:54Z
+---
+
+_request decodes any non-empty 2xx body; a proxy returning HTML gives an unhelpful JSON::MaybeXS error. Wrap and croak with method/path like the non-2xx case.
