@@ -2,7 +2,6 @@
 name: www-openbao-worker
 description: "Default WWW-OpenBao worker — implement, refactor, debug and test the OpenBao/Vault Perl client in lib/WWW/OpenBao.pm. Pre-loaded with the repo conventions, the OpenBao HTTP API semantics, Getty house Perl rules and [@Author::GETTY] release metadata. Use for anything touching client behaviour, new API endpoints, error handling or the dependency set. Leaves a commit-ready tree; never commits — commits belong to www-openbao-release-manager."
 model: inherit
-allowed-tools: Read, Edit, Write, Bash, Glob, Grep
 briefing:
   skills:
     - www-openbao-core

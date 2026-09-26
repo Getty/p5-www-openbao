@@ -2,7 +2,7 @@
 name: www-openbao-doc-writer
 description: "Write and maintain WWW-OpenBao POD in the @Author::GETTY PodWeaver house format (inline =attr and =method directives in __END__). Also maintains README.md in sync with the POD. Documentation only — no behaviour changes."
 model: sonnet
-allowed-tools: Read, Edit, Grep, Glob
+disallowedTools: Write, NotebookEdit, Bash
 briefing:
   skills:
     - www-openbao-core

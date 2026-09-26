@@ -2,7 +2,6 @@
 name: www-openbao-test-writer
 description: "Write WWW-OpenBao tests with Test::More. The suite is offline by construction — never write a test that opens a socket, needs a running OpenBao/Vault, or touches a k8s cluster; stub the lazy _http attribute instead. Use for test additions, regression scaffolding and coverage of request/response behaviour."
 model: sonnet
-allowed-tools: Read, Edit, Write, Bash, Glob, Grep
 briefing:
   skills:
     - www-openbao-core
