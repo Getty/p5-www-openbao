@@ -8,7 +8,7 @@ briefing:
     - www-openbao-core
     - openbao-general
     - getty-perl-core
-    - kanban-issues-karr-cli
+    - kanban-issues-karr-ticket
 ---
 
 You are the www-openbao-test-writer.

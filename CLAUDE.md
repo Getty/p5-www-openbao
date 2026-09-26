@@ -20,7 +20,7 @@ principle and lane are in `.claude/rules/www-openbao-rules.md`.
 |---|---|
 | Implement / refactor / debug behavior-relevant code | `www-openbao-worker` (default) |
 | Write/extend tests | `www-openbao-test-writer` |
-| Pre-release audit | `www-openbao-release-checker` |
+| Commits, `Changes`, card → done, pre-release audit | `www-openbao-release-manager` |
 | Write/maintain POD and README | `www-openbao-doc-writer` |
 
 The agents carry their skills via `briefing.skills` (see `.claude/agents/`); the main agent
