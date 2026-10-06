@@ -2,6 +2,14 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - SECURITY: the server certificate of an https endpoint is always verified,
+   whatever HTTP::Tiny is installed (its own default is off before 0.083) and
+   whatever PERL_HTTP_TINY_SSL_INSECURE_BY_DEFAULT says
+ - New verify_ssl attribute (default true); verify_ssl => 0 is the one way to
+   turn certificate verification off, for a dev server with a self-signed
+   certificate
+ - New ssl_ca_file attribute to verify the server against a private CA
+
 0.003     2026-09-22 19:42:46Z
 
  - New k8s_auth_mount attribute (default 'kubernetes') lets login_k8s reach

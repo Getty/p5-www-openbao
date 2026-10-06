@@ -53,6 +53,22 @@ $bao->enable_engine('goldmine', 'kv-v2'); # mount a named KV engine
 $bao->health;                             # /v1/sys/health
 ```
 
+## TLS
+
+For an `https://` endpoint the server certificate is always verified — the
+client sets this itself, independent of the installed HTTP::Tiny version and
+of `PERL_HTTP_TINY_SSL_INSECURE_BY_DEFAULT`.
+
+```perl
+WWW::OpenBao->new( endpoint => $url, ssl_ca_file => '/etc/ssl/private-ca.pem' ); # private CA
+WWW::OpenBao->new( endpoint => $url, verify_ssl  => 0 );  # dev only: accepts any certificate
+```
+
+`ssl_ca_file` keeps verification on and is the right choice for a server
+signed by your own CA. `verify_ssl => 0` exposes the token and every secret to
+anyone who can intercept the connection. HTTPS needs `IO::Socket::SSL` and
+`Net::SSLeay`, which are not dependencies of this distribution.
+
 ## Error handling
 
 Every request goes through one shared seam: a non-2xx response `croak`s with

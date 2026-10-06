@@ -11,9 +11,25 @@ has endpoint       => (is => 'ro', required => 1);
 has token          => (is => 'rw', default => sub { '' });
 has kv_mount       => (is => 'ro', default => sub { 'secret' });
 has k8s_auth_mount => (is => 'ro', default => sub { 'kubernetes' });
+has verify_ssl     => (is => 'ro', default => sub { 1 });
+has ssl_ca_file    => (is => 'ro');
 has _http          => (is => 'lazy');
 
-sub _build__http { HTTP::Tiny->new(timeout => 10) }
+# verify_SSL is always passed explicitly: HTTP::Tiny's own default was "off"
+# before 0.083 and PERL_HTTP_TINY_SSL_INSECURE_BY_DEFAULT=1 turns it off on
+# newer versions, and neither may decide whether a token or a secret travels
+# over an unverified connection. Only a defined false verify_ssl switches it
+# off — an undef (e.g. a missing config key passed through) keeps it on.
+sub _build__http {
+  my ($self) = @_;
+  my %ssl;
+  $ssl{SSL_ca_file} = $self->ssl_ca_file if defined $self->ssl_ca_file;
+  return HTTP::Tiny->new(
+    timeout     => 10,
+    verify_SSL  => ($self->verify_ssl // 1) ? 1 : 0,
+    SSL_options => \%ssl,
+  );
+}
 
 # KV v2 paths
 sub _kv_path          { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/data/$p" }
@@ -240,6 +256,12 @@ leaves L</token> undefined, since no C<client_token> came back.
 L</health> is the one method that never croaks: it returns C<undef> whenever
 the server gives no usable answer, see there.
 
+For an C<https://> L</endpoint> the server certificate is always verified,
+see L</verify_ssl> and L</ssl_ca_file>. HTTPS itself needs L<IO::Socket::SSL>
+and L<Net::SSLeay>, which L<HTTP::Tiny> loads on demand; they are not
+dependencies of this distribution, so a plain C<http://> setup installs
+without them.
+
 =attr endpoint
 
 Required. Base URL of the Vault/OpenBao server, e.g.
@@ -260,6 +282,34 @@ Mount path of the Kubernetes auth method. Defaults to C<kubernetes>, the
 OpenBao/Vault default. Set it when the method is mounted elsewhere — e.g.
 C<k8s_auth_mount =E<gt> 'kubernetes-prod'> makes L</login_k8s> post to
 C<v1/auth/kubernetes-prod/login>.
+
+=attr verify_ssl
+
+Whether the server certificate of an C<https://> L</endpoint> is verified.
+Defaults to true. The value is handed to L<HTTP::Tiny> explicitly, so neither
+an L<HTTP::Tiny> older than 0.083 (which did not verify by default) nor
+C<PERL_HTTP_TINY_SSL_INSECURE_BY_DEFAULT> in the environment changes it.
+
+  verify_ssl => 0,   # dev server with a self-signed certificate
+
+C<verify_ssl =E<gt> 0> turns the check off: any certificate is accepted, so
+whoever can intercept the connection reads the token and every secret that is
+sent or fetched. It is meant for a throwaway dev server and nothing else; for
+a server whose certificate comes from a private CA use L</ssl_ca_file>, which
+keeps verification on. Only a defined false value switches it off — an
+C<undef> (say, a missing config key passed through) leaves verification on.
+
+=attr ssl_ca_file
+
+Optional. Path to a PEM file with the CA certificate(s) the server certificate
+is verified against — for an OpenBao/Vault whose certificate was issued by a
+private CA.
+
+  ssl_ca_file => '/etc/ssl/private-ca.pem',
+
+Without it L<HTTP::Tiny> uses the system's CA bundle (or L<Mozilla::CA>). When
+given, the file is used B<instead of> that bundle, and it must be readable —
+otherwise every request fails. It has no effect with C<verify_ssl =E<gt> 0>.
 
 =method read_secret($path, version => $n)
 
