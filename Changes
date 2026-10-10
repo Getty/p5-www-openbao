@@ -2,6 +2,17 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - New write_policy, read_policy and delete_policy manage ACL policies
+ - New enable_auth, and AppRole support on top of it: enable_approle,
+   ensure_approle_role, approle_role_id, approle_secret_id and login_approle;
+   the approle_auth_mount attribute (default 'approle') reaches a method
+   mounted elsewhere
+ - New ensure_token_role
+ - Database secrets engine: configure_database, database_role,
+   database_credentials (dynamic credentials, returned together with their
+   lease) and rotate_root; the database_mount attribute (default 'database')
+   names the mount
+ - New renew_lease and revoke_lease
  - SECURITY: the server certificate of an https endpoint is always verified,
    whatever HTTP::Tiny is installed (its own default is off before 0.083) and
    whatever PERL_HTTP_TINY_SSL_INSECURE_BY_DEFAULT says

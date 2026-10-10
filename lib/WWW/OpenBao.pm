@@ -11,6 +11,8 @@ has endpoint       => (is => 'ro', required => 1);
 has token          => (is => 'rw', default => sub { '' });
 has kv_mount       => (is => 'ro', default => sub { 'secret' });
 has k8s_auth_mount => (is => 'ro', default => sub { 'kubernetes' });
+has approle_auth_mount => (is => 'ro', default => sub { 'approle' });
+has database_mount  => (is => 'ro', default => sub { 'database' });
 has verify_ssl     => (is => 'ro', default => sub { 1 });
 has ssl_ca_file    => (is => 'ro');
 has _http          => (is => 'lazy');
@@ -195,6 +197,117 @@ sub enable_engine {
   return $self->_request('POST', "v1/sys/mounts/$path", { type => $type });
 }
 
+# Sys: enable an auth method. %opts ride along in the body (description,
+# config, ...); type is always the one named here.
+sub enable_auth {
+  my ($self, $path, $type, %opts) = @_;
+  return $self->_request('POST', "v1/sys/auth/$path", { %opts, type => $type });
+}
+
+# Sys: ACL policies
+sub write_policy {
+  my ($self, $name, $hcl) = @_;
+  croak "write_policy requires a policy name" unless defined $name && length $name;
+  croak "write_policy requires the policy text" unless defined $hcl && length $hcl;
+  return $self->_request('PUT', "v1/sys/policies/acl/$name", { policy => $hcl });
+}
+
+sub read_policy {
+  my ($self, $name) = @_;
+  my $resp = $self->_request('GET', "v1/sys/policies/acl/$name");
+  return $resp ? $resp->{data}{policy} : undef;
+}
+
+sub delete_policy {
+  my ($self, $name) = @_;
+  return $self->_request('DELETE', "v1/sys/policies/acl/$name");
+}
+
+# Auth: AppRole
+sub _approle_path { my ($self, $p) = @_; 'v1/auth/' . $self->approle_auth_mount . "/$p" }
+
+sub enable_approle {
+  my ($self, %opts) = @_;
+  return $self->enable_auth($self->approle_auth_mount, 'approle', %opts);
+}
+
+sub ensure_approle_role {
+  my ($self, $name, %opts) = @_;
+  return $self->_request('POST', $self->_approle_path("role/$name"), { %opts });
+}
+
+sub approle_role_id {
+  my ($self, $name) = @_;
+  my $resp = $self->_request('GET', $self->_approle_path("role/$name/role-id"));
+  return $resp ? $resp->{data}{role_id} : undef;
+}
+
+sub approle_secret_id {
+  my ($self, $name, %opts) = @_;
+  my $resp = $self->_request('POST', $self->_approle_path("role/$name/secret-id"), { %opts });
+  return $resp ? $resp->{data}{secret_id} : undef;
+}
+
+sub login_approle {
+  my ($self, %args) = @_;
+  my $role_id   = $args{role_id}   // croak "login_approle requires 'role_id'";
+  my $secret_id = $args{secret_id} // croak "login_approle requires 'secret_id'";
+  my $resp = $self->_request('POST', $self->_approle_path('login'), {
+    role_id => $role_id, secret_id => $secret_id,
+  });
+  croak "login_approle: auth method not mounted at " . $self->approle_auth_mount
+    unless $resp;
+  $self->token($resp->{auth}{client_token});
+  return $resp->{auth};
+}
+
+# Auth: token roles
+sub ensure_token_role {
+  my ($self, $name, %opts) = @_;
+  return $self->_request('POST', "v1/auth/token/roles/$name", { %opts });
+}
+
+# Database secrets engine: connections, roles, dynamic credentials, rotation
+sub _database_path { my ($self, $p) = @_; 'v1/' . $self->database_mount . "/$p" }
+
+sub configure_database {
+  my ($self, $name, %opts) = @_;
+  return $self->_request('POST', $self->_database_path("config/$name"), { %opts });
+}
+
+sub database_role {
+  my ($self, $name, %opts) = @_;
+  return $self->_request('POST', $self->_database_path("roles/$name"), { %opts });
+}
+
+sub database_credentials {
+  my ($self, $name) = @_;
+  my $resp = $self->_request('GET', $self->_database_path("creds/$name"));
+  return undef unless $resp;
+  return { %{ $resp->{data} },
+    lease_id       => $resp->{lease_id},
+    lease_duration => $resp->{lease_duration},
+    renewable      => $resp->{renewable} };
+}
+
+sub rotate_root {
+  my ($self, $name) = @_;
+  return $self->_request('POST', $self->_database_path("rotate-root/$name"));
+}
+
+# Sys: leases
+sub renew_lease {
+  my ($self, $lease_id, %opts) = @_;
+  croak "renew_lease requires a lease id" unless defined $lease_id && length $lease_id;
+  return $self->_request('PUT', 'v1/sys/leases/renew', { %opts, lease_id => $lease_id });
+}
+
+sub revoke_lease {
+  my ($self, $lease_id) = @_;
+  croak "revoke_lease requires a lease id" unless defined $lease_id && length $lease_id;
+  return $self->_request('PUT', 'v1/sys/leases/revoke', { lease_id => $lease_id });
+}
+
 1;
 
 __END__
@@ -282,6 +395,19 @@ Mount path of the Kubernetes auth method. Defaults to C<kubernetes>, the
 OpenBao/Vault default. Set it when the method is mounted elsewhere — e.g.
 C<k8s_auth_mount =E<gt> 'kubernetes-prod'> makes L</login_k8s> post to
 C<v1/auth/kubernetes-prod/login>.
+
+
+=attr approle_auth_mount
+
+Mount path of the AppRole auth method. Defaults to C<approle>. Used by
+L</enable_approle>, L</ensure_approle_role>, L</approle_role_id>,
+L</approle_secret_id> and L</login_approle>.
+
+=attr database_mount
+
+Mount path of the database secrets engine. Defaults to C<database>. Used by
+L</configure_database>, L</database_role>, L</database_credentials> and
+L</rotate_root>.
 
 =attr verify_ssl
 
@@ -422,5 +548,91 @@ Submits a single unseal key share.
 
 Mounts a secrets engine at C<$path> with the given C<$type> (e.g.
 C<kv-v2>).
+
+=method enable_auth($path, $type, %opts)
+
+Enables an auth method of the given C<$type> at C<$path> via
+C<POST v1/sys/auth/E<lt>pathE<gt>>. C<%opts> (C<description>, C<config>, ...)
+are sent along.
+
+=method write_policy($name, $hcl)
+
+Creates or replaces the ACL policy C<$name> with the policy text C<$hcl> via
+C<PUT v1/sys/policies/acl/E<lt>nameE<gt>>. Both arguments are required.
+
+=method read_policy($name)
+
+Returns the text of the ACL policy C<$name>, or C<undef> if there is none.
+
+=method delete_policy($name)
+
+Deletes the ACL policy C<$name>.
+
+=method enable_approle(%opts)
+
+Enables the AppRole auth method at L</approle_auth_mount>. Shorthand for
+L</enable_auth> with type C<approle>.
+
+=method ensure_approle_role($name, %opts)
+
+Creates or updates the AppRole role C<$name> with C<%opts> (e.g.
+C<token_policies>, C<token_ttl>, C<secret_id_ttl>).
+
+=method approle_role_id($name)
+
+Returns the C<role_id> of the AppRole role C<$name>, or C<undef> if the role
+does not exist.
+
+=method approle_secret_id($name, %opts)
+
+Issues a new C<secret_id> for the AppRole role C<$name> and returns it.
+C<%opts> (e.g. C<metadata>, C<ttl>) are sent along. Every call issues a fresh
+secret id; store it, it cannot be read back.
+
+=method login_approle(role_id => $id, secret_id => $secret)
+
+Performs an AppRole login against L</approle_auth_mount>. Both arguments are
+required. On success the returned C<client_token> is stored in L</token> and
+the full C<auth> hashref is returned.
+
+=method ensure_token_role($name, %opts)
+
+Creates or updates the token role C<$name> with C<%opts> (e.g.
+C<allowed_policies>, C<period>).
+
+=method configure_database($name, %opts)
+
+Configures the connection C<$name> of the database secrets engine at
+L</database_mount> with C<%opts> (C<plugin_name>, C<connection_url>,
+C<allowed_roles>, C<username>, C<password>, ...). The engine itself is mounted
+with L</enable_engine>.
+
+=method database_role($name, %opts)
+
+Creates or updates the database role C<$name> with C<%opts> (C<db_name>,
+C<creation_statements>, C<default_ttl>, C<max_ttl>, ...). Credentials for the
+role are then issued by L</database_credentials>.
+
+=method database_credentials($name)
+
+Issues a fresh, short-lived credential pair for the database role C<$name>.
+Returns a hashref with C<username> and C<password> plus the lease it lives
+under — C<lease_id>, C<lease_duration> and C<renewable> — or C<undef> if the
+role does not exist. Extend the lease with L</renew_lease>, end it early with
+L</revoke_lease>.
+
+=method rotate_root($name)
+
+Rotates the root credential of the database connection C<$name>. Afterwards
+only the server knows the password: the one passed to
+L</configure_database> no longer works.
+
+=method renew_lease($lease_id, %opts)
+
+Renews the lease C<$lease_id>; C<%opts> may carry C<increment> (seconds).
+
+=method revoke_lease($lease_id)
+
+Revokes the lease C<$lease_id>; the credentials issued under it stop working.
 
 =cut
