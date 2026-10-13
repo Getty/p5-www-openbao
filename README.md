@@ -1,8 +1,9 @@
 # WWW::OpenBao
 
 Perl HTTP client for [OpenBao](https://openbao.org/) and HashiCorp Vault — KV
-v2 secrets, health/init/unseal, enable-engine, and Kubernetes ServiceAccount
-auth.
+v2 secrets, health/init/unseal, enable-engine, Kubernetes ServiceAccount and
+AppRole auth, ACL policies, token roles, the database secrets engine and
+leases.
 
 ## Synopsis
 
@@ -51,6 +52,37 @@ $bao->init;                               # first-time init (dev only)
 $bao->unseal($key);                       # unseal with a key share
 $bao->enable_engine('goldmine', 'kv-v2'); # mount a named KV engine
 $bao->health;                             # /v1/sys/health
+```
+
+## Policies, AppRole and token roles
+
+```perl
+$bao->write_policy('app', $hcl);                    # create / replace
+my $text = $bao->read_policy('app');                # undef if absent
+$bao->delete_policy('app');
+
+$bao->enable_approle;                               # at approle_auth_mount
+$bao->ensure_approle_role('app', token_policies => ['app']);
+my $role_id   = $bao->approle_role_id('app');
+my $secret_id = $bao->approle_secret_id('app');     # fresh each call
+$bao->login_approle( role_id => $role_id, secret_id => $secret_id );  # sets token
+
+$bao->enable_auth('userpass', 'userpass');          # any auth method
+$bao->ensure_token_role('batch', allowed_policies => ['app']);
+```
+
+## Database engine and leases
+
+```perl
+$bao->enable_engine('database', 'database');        # mount at database_mount
+$bao->configure_database('pg', plugin_name => 'postgresql-database-plugin',
+  connection_url => '...', allowed_roles => ['app'], username => $u, password => $p);
+$bao->database_role('app', db_name => 'pg', creation_statements => [$sql],
+  default_ttl => '1h');
+my $c = $bao->database_credentials('app');   # username, password, lease_id, lease_duration, renewable
+$bao->renew_lease($c->{lease_id}, increment => 3600);
+$bao->revoke_lease($c->{lease_id});
+$bao->rotate_root('pg');                     # only the server knows the root password afterwards
 ```
 
 ## TLS

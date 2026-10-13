@@ -2,11 +2,12 @@
 
 WWW::OpenBao — minimal Perl HTTP client for [OpenBao](https://openbao.org/) and HashiCorp
 Vault, extracted from `HI::Daemon`. KV v2 read/write/list/delete, Kubernetes ServiceAccount
-login, and a few `sys/*` bootstrap helpers. One file (`lib/WWW/OpenBao.pm`), Moo-based,
+and AppRole login, and `sys/*` bootstrap helpers. One file (`lib/WWW/OpenBao.pm`), Moo-based,
 released to CPAN via Dist::Zilla `[@Author::GETTY]`.
 
-Deliberately small: no caching, no lease renewal, no policy management. Growing that
-surface is a maintainer decision, not a patch.
+Deliberately small: no caching, no automatic lease renewal. Beyond KV it covers ACL
+policies, AppRole/token roles, the database engine and lease renew/revoke (0.004);
+growing that surface further is a maintainer decision, not a patch.
 
 Consumers: `goldmine`, `hiplatform` and `hi-proto`, all depending on the distribution. See
 the hazards section of the house rules before changing behaviour.

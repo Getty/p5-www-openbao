@@ -330,17 +330,31 @@ __END__
 
   $bao->login_k8s( role => 'my-app' );  # sets $bao->token
 
+  # bootstrap with a root token, then log in as an AppRole
+  $bao->write_policy('app', 'path "secret/data/app/*" { capabilities = ["read"] }');
+  $bao->enable_approle;
+  $bao->ensure_approle_role('app', token_policies => ['app']);
+  my $role_id   = $bao->approle_role_id('app');
+  my $secret_id = $bao->approle_secret_id('app');
+  $bao->login_approle( role_id => $role_id, secret_id => $secret_id );
+
+  # dynamic database credentials and their lease
+  my $db = $bao->database_credentials('app');  # username, password, lease_id, ...
+  $bao->revoke_lease( $db->{lease_id} );
+
 =head1 DESCRIPTION
 
 L<WWW::OpenBao> is a minimal HTTP client for L<OpenBao|https://openbao.org/>
 and HashiCorp Vault. It covers the day-to-day surface used by application
-code: KV v2 secret read/write/list/delete, Kubernetes ServiceAccount login,
-and a handful of C<sys/*> bootstrap helpers (C<health>, C<init>, C<unseal>,
-C<enable_engine>).
+code: KV v2 secret read/write/list/delete, Kubernetes ServiceAccount and
+AppRole login, and the C<sys/*> and auth calls needed to bootstrap a setup:
+C<health>, C<init>, C<unseal>, C<enable_engine>, C<enable_auth>, ACL policies,
+AppRole and token roles, the database secrets engine (dynamic credentials) and
+lease renew/revoke.
 
-It is intentionally small — no caching, no lease renewal, no policy
-management. If you need those, reach for a heavier client; if you just want
-to talk to Vault/OpenBao from Perl, this is enough.
+It is intentionally small — no caching and no automatic lease renewal; the
+caller decides when to renew. If you need more, reach for a heavier client; if
+you just want to talk to Vault/OpenBao from Perl, this is enough.
 
 Every request goes through one shared seam, and its error contract applies to
 every method: a non-2xx response C<croak>s with the status and response body,
@@ -358,8 +372,11 @@ C<undef> means "no readable value", not "never existed".
 (permission denied) croaks like any other non-2xx.
 
 =item * L</write_secret>, L</delete_secret>, L</soft_delete_secret>,
-L</undelete_secret>, L</destroy_secret>, L</init>, L</unseal> and
-L</enable_engine> return C<undef>.
+L</undelete_secret>, L</destroy_secret>, L</init>, L</unseal>,
+L</enable_engine>, L</enable_auth>, the policy, AppRole, token role, database
+and lease calls return C<undef>. L</read_policy>, L</approle_role_id>,
+L</approle_secret_id> and L</database_credentials> return C<undef> for a
+missing policy, role or database role; L</login_approle> croaks instead.
 
 =item * L</login_k8s> does not croak either: it returns an empty hashref and
 leaves L</token> undefined, since no C<client_token> came back.

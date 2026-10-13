@@ -2,6 +2,9 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - POD and README: describe the policy, AppRole, token role, database and
+   lease calls (SYNOPSIS, DESCRIPTION, 404 contract, README sections); drop
+   the stale "no lease renewal, no policy management" statement
  - New write_policy, read_policy and delete_policy manage ACL policies
  - New enable_auth, and AppRole support on top of it: enable_approle,
    ensure_approle_role, approle_role_id, approle_secret_id and login_approle;
