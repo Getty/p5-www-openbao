@@ -1,0 +1,17 @@
+---
+class: standard
+completed: 2026-10-15T03:13:24Z
+created: 2026-09-22T19:21:54Z
+id: 13
+priority: low
+started: 2026-10-15T03:11:34Z
+status: done
+tags:
+- errors
+title: Non-JSON 2xx body dies with a bare decode_json error
+updated: 2026-10-15T03:13:24Z
+---
+
+_request decodes any non-empty 2xx body; a proxy returning HTML gives an unhelpful JSON::MaybeXS error. Wrap and croak with method/path like the non-2xx case.
+
+2026-10-15 03:12 Done (commit k13): decode_json in eval, croak 'OpenBao M PATH: STATUS response is not JSON: <erste 200 Zeichen>'. Test t/20-request.t case 7 rot gegen altes lib, suite gruen. Randbefund: ein Body 'null' decodiert zu undef und croakt jetzt ebenfalls - kein gueltiger Vault-Body, aber Verhaltensrand. health faengt es per eval wie bisher.
