@@ -1,0 +1,31 @@
+---
+class: standard
+completed: 2026-10-15T03:13:30Z
+created: 2026-10-06T19:19:45Z
+id: 15
+priority: medium
+started: 2026-10-15T03:10:24Z
+status: done
+tags:
+- bug
+- api
+- errors
+- review-2026-10-06
+title: write_secret and the other writes return undef on 404 instead of croaking
+updated: 2026-10-15T03:13:30Z
+---
+
+`_request` maps every 404 to `undef` (`lib/WWW/OpenBao.pm:37`). For reads that is the documented soft miss. For writes it hides a failed operation: OpenBao answers 404 (`no handler for route`) when the KV mount does not exist or is KV v1, so with a mistyped `kv_mount`
+
+    $bao->write_secret('app/db', { password => $pw });   # returns undef, no exception
+
+stores nothing and raises nothing. The POD of `write_secret` (`lib/WWW/OpenBao.pm:285-288`) says only "Returns the decoded response"; a caller who does not test the return value loses the secret. The same holds for `enable_engine` (line 179), `unseal` (173), `init` (165), `destroy_secret`, `undelete_secret` and `soft_delete_secret` with versions.
+
+k10 is the same defect for `login_k8s`; this card is the write side and can be fixed with it (same contract change, same consumers goldmine and hiplatform to warn).
+
+Done: `_request` takes a flag (or the write methods check) so that a 404 on a write croaks with method, path and body like every other non-2xx; reads and `secret_exists` keep the soft miss; POD and README state it; a test per write method in `t/20-request.t`.
+
+---
+Fleet review 2026-10-06 · kind: bug · confidence: verified
+
+2026-10-15 03:11 Done (commit k15): neues _write (strict 404 -> croak) fuer alle mutierenden Aufrufe; login_k8s/login_approle/approle_secret_id behalten eigene Behandlung, Reads/list/secret_exists weich. Test: 19 Schreibmethoden + 3 weiche Reads in t/20-request.t, rot gegen altes lib (19 Failures), suite green. VON GETTY ZU BESTAETIGEN: Verhaltenswechsel; ueber die Karte hinaus auch delete_secret/enable_auth/policy/approle/token-role/db/lease-Writes einbezogen (Konsistenz) - bitte Umfang bestaetigen oder zuruecknehmen. Konsumenten goldmine/hiplatform/hi-proto: ticketen, nicht editiert.
