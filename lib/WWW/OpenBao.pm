@@ -42,7 +42,7 @@ sub _kv_destroy_path  { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/destroy
 
 # Core HTTP
 sub _request {
-  my ($self, $method, $path, $body) = @_;
+  my ($self, $method, $path, $body, $strict) = @_;
   my $url = $self->endpoint . '/' . $path;
   my %opts = (headers => {
     'X-Vault-Token' => $self->token,
@@ -52,10 +52,18 @@ sub _request {
     $opts{headers}{'Content-Type'} = 'application/json';
   }
   my $resp = $self->_http->request($method, $url, \%opts);
-  return undef if $resp->{status} == 404;
+  return undef if $resp->{status} == 404 && !$strict;
   croak "OpenBao $method $path: $resp->{status} $resp->{content}"
     unless $resp->{success};
   return $resp->{content} ? decode_json($resp->{content}) : {};
+}
+
+# A write whose route answers 404 (mistyped mount, KV v1, no such engine) did
+# not happen; returning undef would let the caller carry on, so a 404 croaks
+# like any other non-2xx. Reads keep the soft miss via plain _request.
+sub _write {
+  my ($self, $method, $path, $body) = @_;
+  return $self->_request($method, $path, $body, 1);
 }
 
 # KV v2: GET data/<path>, latest version by default; version => $n reads an
@@ -89,13 +97,13 @@ sub read_secret_metadata {
 # KV v2: write secret data
 sub write_secret {
   my ($self, $path, $data) = @_;
-  return $self->_request('POST', $self->_kv_path($path), { data => $data });
+  return $self->_write('POST', $self->_kv_path($path), { data => $data });
 }
 
 # KV v2: delete secret (all versions + metadata) — ladder level 3, irreversible
 sub delete_secret {
   my ($self, $path) = @_;
-  return $self->_request('DELETE', $self->_kv_metadata_path($path));
+  return $self->_write('DELETE', $self->_kv_metadata_path($path));
 }
 
 # KV v2 delete ladder level 1 (reversible soft delete). Without versions,
@@ -104,16 +112,16 @@ sub delete_secret {
 # undelete_secret.
 sub soft_delete_secret {
   my ($self, $path, @versions) = @_;
-  return $self->_request('POST', $self->_kv_delete_path($path), { versions => \@versions })
+  return $self->_write('POST', $self->_kv_delete_path($path), { versions => \@versions })
     if @versions;
-  return $self->_request('DELETE', $self->_kv_path($path));
+  return $self->_write('DELETE', $self->_kv_path($path));
 }
 
 # KV v2: restore soft-deleted versions (reverses soft_delete_secret)
 sub undelete_secret {
   my ($self, $path, @versions) = @_;
   croak "undelete_secret requires at least one version" unless @versions;
-  return $self->_request('POST', $self->_kv_undelete_path($path), { versions => \@versions });
+  return $self->_write('POST', $self->_kv_undelete_path($path), { versions => \@versions });
 }
 
 # KV v2 delete ladder level 2 (irreversible): permanently destroy named
@@ -121,7 +129,7 @@ sub undelete_secret {
 sub destroy_secret {
   my ($self, $path, @versions) = @_;
   croak "destroy_secret requires at least one version" unless @versions;
-  return $self->_request('PUT', $self->_kv_destroy_path($path), { versions => \@versions });
+  return $self->_write('PUT', $self->_kv_destroy_path($path), { versions => \@versions });
 }
 
 # KV v2: list secrets at path
@@ -182,7 +190,7 @@ sub init {
   my ($self, %args) = @_;
   my $shares    = $args{secret_shares}    // 1;
   my $threshold = $args{secret_threshold} // 1;
-  return $self->_request('POST', 'v1/sys/init', {
+  return $self->_write('POST', 'v1/sys/init', {
     secret_shares => $shares, secret_threshold => $threshold,
   });
 }
@@ -190,20 +198,20 @@ sub init {
 # Sys: unseal
 sub unseal {
   my ($self, $key) = @_;
-  return $self->_request('POST', 'v1/sys/unseal', { key => $key });
+  return $self->_write('POST', 'v1/sys/unseal', { key => $key });
 }
 
 # Sys: enable secrets engine
 sub enable_engine {
   my ($self, $path, $type) = @_;
-  return $self->_request('POST', "v1/sys/mounts/$path", { type => $type });
+  return $self->_write('POST', "v1/sys/mounts/$path", { type => $type });
 }
 
 # Sys: enable an auth method. %opts ride along in the body (description,
 # config, ...); type is always the one named here.
 sub enable_auth {
   my ($self, $path, $type, %opts) = @_;
-  return $self->_request('POST', "v1/sys/auth/$path", { %opts, type => $type });
+  return $self->_write('POST', "v1/sys/auth/$path", { %opts, type => $type });
 }
 
 # Sys: ACL policies
@@ -211,7 +219,7 @@ sub write_policy {
   my ($self, $name, $hcl) = @_;
   croak "write_policy requires a policy name" unless defined $name && length $name;
   croak "write_policy requires the policy text" unless defined $hcl && length $hcl;
-  return $self->_request('PUT', "v1/sys/policies/acl/$name", { policy => $hcl });
+  return $self->_write('PUT', "v1/sys/policies/acl/$name", { policy => $hcl });
 }
 
 sub read_policy {
@@ -222,7 +230,7 @@ sub read_policy {
 
 sub delete_policy {
   my ($self, $name) = @_;
-  return $self->_request('DELETE', "v1/sys/policies/acl/$name");
+  return $self->_write('DELETE', "v1/sys/policies/acl/$name");
 }
 
 # Auth: AppRole
@@ -235,7 +243,7 @@ sub enable_approle {
 
 sub ensure_approle_role {
   my ($self, $name, %opts) = @_;
-  return $self->_request('POST', $self->_approle_path("role/$name"), { %opts });
+  return $self->_write('POST', $self->_approle_path("role/$name"), { %opts });
 }
 
 sub approle_role_id {
@@ -266,7 +274,7 @@ sub login_approle {
 # Auth: token roles
 sub ensure_token_role {
   my ($self, $name, %opts) = @_;
-  return $self->_request('POST', "v1/auth/token/roles/$name", { %opts });
+  return $self->_write('POST', "v1/auth/token/roles/$name", { %opts });
 }
 
 # Database secrets engine: connections, roles, dynamic credentials, rotation
@@ -274,12 +282,12 @@ sub _database_path { my ($self, $p) = @_; 'v1/' . $self->database_mount . "/$p" 
 
 sub configure_database {
   my ($self, $name, %opts) = @_;
-  return $self->_request('POST', $self->_database_path("config/$name"), { %opts });
+  return $self->_write('POST', $self->_database_path("config/$name"), { %opts });
 }
 
 sub database_role {
   my ($self, $name, %opts) = @_;
-  return $self->_request('POST', $self->_database_path("roles/$name"), { %opts });
+  return $self->_write('POST', $self->_database_path("roles/$name"), { %opts });
 }
 
 sub database_credentials {
@@ -294,20 +302,20 @@ sub database_credentials {
 
 sub rotate_root {
   my ($self, $name) = @_;
-  return $self->_request('POST', $self->_database_path("rotate-root/$name"));
+  return $self->_write('POST', $self->_database_path("rotate-root/$name"));
 }
 
 # Sys: leases
 sub renew_lease {
   my ($self, $lease_id, %opts) = @_;
   croak "renew_lease requires a lease id" unless defined $lease_id && length $lease_id;
-  return $self->_request('PUT', 'v1/sys/leases/renew', { %opts, lease_id => $lease_id });
+  return $self->_write('PUT', 'v1/sys/leases/renew', { %opts, lease_id => $lease_id });
 }
 
 sub revoke_lease {
   my ($self, $lease_id) = @_;
   croak "revoke_lease requires a lease id" unless defined $lease_id && length $lease_id;
-  return $self->_request('PUT', 'v1/sys/leases/revoke', { lease_id => $lease_id });
+  return $self->_write('PUT', 'v1/sys/leases/revoke', { lease_id => $lease_id });
 }
 
 1;
@@ -373,17 +381,23 @@ C<undef> means "no readable value", not "never existed".
 =item * L</secret_exists> returns false. Only a C<404> does that; a C<403>
 (permission denied) croaks like any other non-2xx.
 
-=item * L</write_secret>, L</delete_secret>, L</soft_delete_secret>,
-L</undelete_secret>, L</destroy_secret>, L</init>, L</unseal>,
-L</enable_engine>, L</enable_auth>, the policy, AppRole, token role, database
-and lease calls return C<undef>. L</read_policy>, L</approle_role_id>,
-L</approle_secret_id> and L</database_credentials> return C<undef> for a
-missing policy, role or database role; L</login_approle> croaks instead.
+=item * L</read_policy>, L</approle_role_id>, L</approle_secret_id> and
+L</database_credentials> return C<undef> for a missing policy, role or
+database role.
 
 =item * L</login_k8s> croaks instead, like L</login_approle>: an unmounted
 auth method must not look like a login, and L</token> stays as it was.
 
 =back
+
+Writes are the exception to the soft miss: L</write_secret>,
+L</delete_secret>, L</soft_delete_secret>, L</undelete_secret>,
+L</destroy_secret>, L</init>, L</unseal>, L</enable_engine>,
+L</enable_auth>, L</enable_approle>, the policy writes and deletes, the AppRole
+and token role writes, the database and lease calls C<croak> on a C<404> like
+on any other non-2xx. OpenBao answers C<404> (C<no handler for route>) for a
+mistyped mount, and a write that did not happen must not look like one that
+did.
 
 L</health> is the one method that never croaks: it returns C<undef> whenever
 the server gives no usable answer, see there.

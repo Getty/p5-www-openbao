@@ -113,7 +113,14 @@ back as a soft miss:
 - `list_secrets` returns an empty arrayref
 - `secret_exists` returns false — only on 404; a 403 croaks
 - `login_k8s` croaks (like `login_approle`) and leaves `token` untouched
-- every other method returns `undef`
+- `read_policy`, `approle_role_id`, `approle_secret_id` and
+  `database_credentials` return `undef`
+
+Writes are the exception: `write_secret`, `delete_secret`,
+`soft_delete_secret`, `undelete_secret`, `destroy_secret`, `init`, `unseal`,
+`enable_engine`, `enable_auth`, `enable_approle`, the policy writes/deletes,
+the AppRole and token role writes, the database and lease calls `croak` on a
+404 too — a mistyped mount must not look like a stored secret.
 
 `health` never croaks: it returns the health hashref for any reachable server
 (sealed, standby and uninitialised included) and `undef` when there is no

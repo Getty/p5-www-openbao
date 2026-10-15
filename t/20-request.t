@@ -101,4 +101,39 @@ my $new_bao = sub {
      'croak message names both the HTTP method and the path';
 }
 
+#### Case 5 (k15): a 404 on a write croaks, reads and secret_exists stay soft
+{
+  my %writes = (
+    write_secret       => sub { $_[0]->write_secret('app/db', { p => 1 }) },
+    delete_secret      => sub { $_[0]->delete_secret('app/db') },
+    soft_delete_secret => sub { $_[0]->soft_delete_secret('app/db') },
+    soft_delete_vers   => sub { $_[0]->soft_delete_secret('app/db', 1) },
+    undelete_secret    => sub { $_[0]->undelete_secret('app/db', 1) },
+    destroy_secret     => sub { $_[0]->destroy_secret('app/db', 1) },
+    init               => sub { $_[0]->init },
+    unseal             => sub { $_[0]->unseal('key') },
+    enable_engine      => sub { $_[0]->enable_engine('kv', 'kv-v2') },
+    enable_auth        => sub { $_[0]->enable_auth('x', 'approle') },
+    write_policy       => sub { $_[0]->write_policy('p', 'path "x" {}') },
+    delete_policy      => sub { $_[0]->delete_policy('p') },
+    ensure_approle     => sub { $_[0]->ensure_approle_role('r') },
+    ensure_token_role  => sub { $_[0]->ensure_token_role('r') },
+    configure_database => sub { $_[0]->configure_database('pg') },
+    database_role      => sub { $_[0]->database_role('r') },
+    rotate_root        => sub { $_[0]->rotate_root('pg') },
+    renew_lease        => sub { $_[0]->renew_lease('l/1') },
+    revoke_lease       => sub { $_[0]->revoke_lease('l/1') },
+  );
+  for my $name (sort keys %writes) {
+    my ($bao) = $new_bao->({ status => 404, success => 0, content => '{"errors":[]}' });
+    my $r = eval { $writes{$name}->($bao) };
+    like $@, qr/^OpenBao \w+ \S+: 404 /, "$name croaks on a 404";
+  }
+
+  my ($bao) = $new_bao->({ status => 404, success => 0, content => '' });
+  is $bao->read_secret('app/db'), undef, 'read_secret keeps the soft miss';
+  is_deeply $bao->list_secrets('app/'), [], 'list_secrets keeps the soft miss';
+  ok !$bao->secret_exists('app/db'), 'secret_exists keeps the soft miss';
+}
+
 done_testing;
