@@ -112,7 +112,7 @@ back as a soft miss:
   readable value", not "never existed")
 - `list_secrets` returns an empty arrayref
 - `secret_exists` returns false — only on 404; a 403 croaks
-- `login_k8s` returns an empty hashref and leaves `token` undefined
+- `login_k8s` croaks (like `login_approle`) and leaves `token` untouched
 - every other method returns `undef`
 
 `health` never croaks: it returns the health hashref for any reachable server

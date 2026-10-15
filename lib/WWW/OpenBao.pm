@@ -149,6 +149,8 @@ sub login_k8s {
   my $resp = $self->_request('POST', 'v1/auth/' . $self->k8s_auth_mount . '/login', {
     role => $role, jwt => $jwt,
   });
+  croak "login_k8s: auth method not mounted at " . $self->k8s_auth_mount
+    unless $resp;
   $self->token($resp->{auth}{client_token});
   return $resp->{auth};
 }
@@ -378,8 +380,8 @@ and lease calls return C<undef>. L</read_policy>, L</approle_role_id>,
 L</approle_secret_id> and L</database_credentials> return C<undef> for a
 missing policy, role or database role; L</login_approle> croaks instead.
 
-=item * L</login_k8s> does not croak either: it returns an empty hashref and
-leaves L</token> undefined, since no C<client_token> came back.
+=item * L</login_k8s> croaks instead, like L</login_approle>: an unmounted
+auth method must not look like a login, and L</token> stays as it was.
 
 =back
 
@@ -533,7 +535,8 @@ default; see L</k8s_auth_mount> to reach a method mounted elsewhere. C<role>
 is required. C<jwt> defaults to the in-pod ServiceAccount token at
 C</var/run/secrets/kubernetes.io/serviceaccount/token>. On success the
 returned C<client_token> is stored in L</token> and the full C<auth> hashref
-is returned.
+is returned. A C<404> (the auth method is not mounted at
+L</k8s_auth_mount>) C<croak>s and leaves L</token> untouched.
 
 =method health
 

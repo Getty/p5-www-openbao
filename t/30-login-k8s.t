@@ -80,4 +80,13 @@ my $new_bao = sub {
      'custom mount posts to v1/auth/<mount>/login';
 }
 
+#### Case 3 (k10): a 404 croaks and leaves a working token alone
+{
+  my $stub = Test::OpenBao::HTTPStub->new({ status => 404, success => 0, content => '{"errors":[]}' });
+  my $bao  = WWW::OpenBao->new(endpoint => 'http://test', token => 'still-good', _http => $stub);
+  eval { $bao->login_k8s(role => 'my-app', jwt => 'jwt-blob') };
+  like $@, qr/not mounted at kubernetes/, 'a 404 on login croaks';
+  is $bao->token, 'still-good', '... and the existing token is untouched';
+}
+
 done_testing;

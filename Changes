@@ -2,6 +2,9 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - login_k8s croaks on a 404 (auth method not mounted at k8s_auth_mount)
+   instead of wiping the token and returning {} (k10; behaviour change,
+   to be confirmed by Getty)
  - POD and README: describe the policy, AppRole, token role, database and
    lease calls (SYNOPSIS, DESCRIPTION, 404 contract, README sections); drop
    the stale "no lease renewal, no policy management" statement
