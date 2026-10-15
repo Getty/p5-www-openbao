@@ -52,7 +52,8 @@ sub _kv_destroy_path  { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/destroy
 # Core HTTP
 sub _request {
   my ($self, $method, $path, $body, $strict) = @_;
-  my $url = $self->endpoint . '/' . $path;
+  (my $base = $self->endpoint) =~ s{/+\z}{};
+  my $url = $base . '/' . $path;
   my %opts = (headers => {
     'X-Vault-Token' => $self->token,
   });
@@ -420,7 +421,7 @@ without them.
 =attr endpoint
 
 Required. Base URL of the Vault/OpenBao server, e.g.
-C<http://127.0.0.1:8200>. No trailing slash.
+C<http://127.0.0.1:8200>. A trailing slash is ignored.
 
 =attr token
 

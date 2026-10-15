@@ -136,4 +136,13 @@ my $new_bao = sub {
   ok !$bao->secret_exists('app/db'), 'secret_exists keeps the soft miss';
 }
 
+#### Case 6 (k12): a trailing slash on endpoint does not double the slash
+{
+  my $stub = Test::OpenBao::HTTPStub->new({ status => 200, success => 1, content => '{}' });
+  my $bao  = WWW::OpenBao->new(endpoint => 'http://test/', token => 't', _http => $stub);
+  $bao->_request('GET', 'v1/sys/health');
+  is $stub->{calls}[0]{url}, 'http://test/v1/sys/health', 'no // after the endpoint';
+  is $bao->endpoint, 'http://test/', 'the endpoint attribute itself is untouched';
+}
+
 done_testing;
