@@ -1,0 +1,17 @@
+---
+class: standard
+completed: 2026-10-15T03:13:13Z
+created: 2026-09-22T19:21:44Z
+id: 11
+priority: low
+started: 2026-10-15T03:11:09Z
+status: done
+tags:
+- api
+title: KV paths are not URI-escaped
+updated: 2026-10-15T03:13:13Z
+---
+
+read_secret/write_secret/... interpolate $path raw into the URL; keys containing space, ?, # or % break. Escape each segment but keep /. Check consumers do not already pass pre-escaped paths.
+
+2026-10-15 03:11 Done (commit k11): _kv_escape in den KV-Pfadhelfern (Unreserved + / bleiben, geflaggte Strings UTF-8). Test in t/10-paths.t rot gegen altes lib (Tests 12-13), suite gruen. VON GETTY ZU BESTAETIGEN: Verhaltenswechsel. Offen: Konsumenten (goldmine, hiplatform, hi-proto) nicht auf vorab escapte Pfade geprueft (Repos nicht angefasst) - sonst Doppel-Escape. Nicht escaped: Namen in sys/policies, approle, db-Pfaden (ausserhalb der Karte).
