@@ -1,0 +1,18 @@
+---
+class: standard
+completed: 2026-10-15T03:13:08Z
+created: 2026-09-22T19:21:40Z
+id: 10
+priority: medium
+started: 2026-10-15T03:10:22Z
+status: done
+tags:
+- api
+- errors
+title: login_k8s wipes a working token on 404 instead of croaking
+updated: 2026-10-15T03:13:08Z
+---
+
+A 404 from auth/<k8s_auth_mount>/login (e.g. wrong mount) makes _request return undef; login_k8s then sets token to undef and returns {}. It should croak. Error-contract change: needs tickets for goldmine and hiplatform consumers.
+
+2026-10-15 03:11 Done (commit k10): login_k8s croaks 'auth method not mounted at <mount>' on 404, token untouched. Test t/30-login-k8s.t case 3, red against old lib (tests 8-9 fail), suite green. VON GETTY ZU BESTAETIGEN: Fehlervertrag-Wechsel. Nachziehen: goldmine (Goldmine::OpenBao) und hiplatform (HIP::OpenBao) fangen login_k8s-Fehler ab? Hinweis dorthin, nicht von hier editiert.
