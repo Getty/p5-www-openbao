@@ -65,7 +65,12 @@ sub _request {
   return undef if $resp->{status} == 404 && !$strict;
   croak "OpenBao $method $path: $resp->{status} $resp->{content}"
     unless $resp->{success};
-  return $resp->{content} ? decode_json($resp->{content}) : {};
+  return {} unless $resp->{content};
+  my $data = eval { decode_json($resp->{content}) };
+  croak "OpenBao $method $path: $resp->{status} response is not JSON: "
+    . substr($resp->{content}, 0, 200)
+    unless defined $data;
+  return $data;
 }
 
 # A write whose route answers 404 (mistyped mount, KV v1, no such engine) did

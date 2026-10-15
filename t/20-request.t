@@ -145,4 +145,13 @@ my $new_bao = sub {
   is $bao->endpoint, 'http://test/', 'the endpoint attribute itself is untouched';
 }
 
+#### Case 7 (k13): a non-JSON 2xx body croaks naming method and path
+{
+  my ($bao) = $new_bao->({ status => 200, success => 1, content => '<html>proxy error</html>' });
+  my $r = eval { $bao->_request('GET', 'v1/secret/data/foo') };
+  like $@, qr{^OpenBao GET v1/secret/data/foo: 200 response is not JSON: <html>},
+    'HTML on a 2xx croaks with method, path, status and the body start';
+  ok !defined $r, '... and returns nothing';
+}
+
 done_testing;

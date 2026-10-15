@@ -2,6 +2,8 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - A 2xx response whose body is not JSON croaks with method, path and the
+   start of the body instead of a bare decode error (k13)
  - A trailing slash on endpoint no longer produces // in request URLs
    (k12)
  - KV secret paths are percent-escaped (UTF-8, "/" kept) so keys with a
