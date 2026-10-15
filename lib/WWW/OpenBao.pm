@@ -33,12 +33,21 @@ sub _build__http {
   );
 }
 
-# KV v2 paths
-sub _kv_path          { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/data/$p" }
-sub _kv_metadata_path { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/metadata/$p" }
-sub _kv_delete_path   { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/delete/$p" }
-sub _kv_undelete_path { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/undelete/$p" }
-sub _kv_destroy_path  { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/destroy/$p" }
+# KV v2 paths. The secret path is percent-escaped (UTF-8 bytes, RFC 3986
+# unreserved characters kept) with "/" left alone, so a key containing a
+# space, ?, # or % reaches the server as a path, not as a query or fragment.
+# A caller that already passes a pre-escaped path would be escaped twice.
+sub _kv_escape {
+  my ($p) = @_;
+  utf8::encode($p) if utf8::is_utf8($p);
+  $p =~ s{([^A-Za-z0-9\-._~/])}{sprintf '%%%02X', ord $1}ge;
+  return $p;
+}
+sub _kv_path          { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/data/"       . _kv_escape($p) }
+sub _kv_metadata_path { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/metadata/"   . _kv_escape($p) }
+sub _kv_delete_path   { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/delete/"     . _kv_escape($p) }
+sub _kv_undelete_path { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/undelete/"   . _kv_escape($p) }
+sub _kv_destroy_path  { my ($self, $p) = @_; "v1/" . $self->kv_mount . "/destroy/"    . _kv_escape($p) }
 
 # Core HTTP
 sub _request {
@@ -471,6 +480,10 @@ given, the file is used B<instead of> that bundle, and it must be readable —
 otherwise every request fails. It has no effect with C<verify_ssl =E<gt> 0>.
 
 =method read_secret($path, version => $n)
+
+The secret C<$path> of every KV method is percent-escaped per segment (the
+C</> separators stay), so keys with a space, C<?>, C<#> or C<%> work. Pass the
+plain key; an already escaped path would be escaped a second time.
 
 Returns the C<data.data> hashref for a KV v2 secret, or C<undef> if the path
 does not exist. By default it reads the latest version; pass

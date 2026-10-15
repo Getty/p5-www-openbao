@@ -36,4 +36,12 @@ my $bao2 = WWW::OpenBao->new(
 is $bao2->_kv_path('a/b'),
    'v1/goldmine/data/a/b',                'custom kv_mount honoured';
 
+# k11: segments are escaped, separators and unreserved characters are not
+is $bao->_kv_path('a b/c?d#e%f'),
+   'v1/secret/data/a%20b/c%3Fd%23e%25f',  'kv path escapes space ? # %';
+is $bao->_kv_metadata_path("k\x{20ac}"),
+   'v1/secret/metadata/k%E2%82%AC',          'kv path escapes characters as UTF-8';
+is $bao->_kv_path('foo-bar_1.2~x/y'),
+   'v1/secret/data/foo-bar_1.2~x/y',      'kv path keeps unreserved characters and /';
+
 done_testing;

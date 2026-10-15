@@ -2,6 +2,10 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - KV secret paths are percent-escaped (UTF-8, "/" kept) so keys with a
+   space, ?, # or % no longer break the URL; a caller that pre-escapes paths
+   would now be double-escaped (k11; behaviour change, to be confirmed by
+   Getty)
  - Write calls (write_secret, delete_secret, soft/undelete/destroy_secret,
    init, unseal, enable_engine, enable_auth, policy, AppRole, token role,
    database and lease writes) croak on a 404 instead of returning undef, so
