@@ -1,0 +1,17 @@
+---
+class: standard
+completed: 2026-10-15T03:13:18Z
+created: 2026-09-22T19:21:49Z
+id: 12
+priority: low
+started: 2026-10-15T03:11:33Z
+status: done
+tags:
+- api
+title: endpoint with trailing slash produces // in URL
+updated: 2026-10-15T03:13:18Z
+---
+
+POD says no trailing slash, but nothing enforces it. Strip one trailing / in _request or via a coerce.
+
+2026-10-15 03:12 Done (commit k12): _request strippt ein trailing / vom endpoint beim URL-Bau (Attribut unveraendert). Test t/20-request.t case 6 rot gegen altes lib, suite gruen. Kein Contract-Wechsel (vorher // im URL).
