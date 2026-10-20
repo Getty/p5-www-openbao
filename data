@@ -1,0 +1,87 @@
+---
+class: standard
+completed: 2026-10-20T16:56:24Z
+created: 2026-10-20T16:26:25Z
+id: 16
+priority: medium
+started: 2026-10-20T16:56:24Z
+status: done
+tags:
+- release
+- prereq
+title: Ein Test, der die Voraussetzungen haelt, fehlt
+updated: 2026-10-20T16:56:24Z
+---
+
+Ein Test, der die Voraussetzungen haelt, fehlt.
+
+Andere Distributionen der WWW-Flotte pruefen mit t/cpanfile.t, dass jede
+Bibliothek, die der Code laedt, im cpanfile genannt ist. In diesem Repo gibt
+es keinen solchen Test: eine verlorene Voraussetzung faellt dann erst beim
+Laden der Bibliothek auf einer Maschine auf, auf der das Modul fehlt - nicht
+beim Bauen.
+
+Der Test entsteht neu nach dem Hausmuster (siehe p5-www-hetzner,
+p5-www-idrac, p5-www-keycloak): er liest das cpanfile, trennt die
+Laufzeit-Phase von der Test-Phase und haelt eine hart kodierte Liste fest -
+je Voraussetzung ein ok(). Wo Modul und Distribution auseinanderlaufen, zaehlt
+die Distribution: der Test akzeptiert deshalb beide Formen (in Klammern die
+zulaessigen Namen im cpanfile).
+
+Laufzeit:
+  HTTP::Tiny
+  JSON::MaybeXS
+  Moo
+  namespace::clean
+
+Test:
+  Test::More
+
+Regeln fuer den Test:
+- Eine Laufzeit-Voraussetzung muss in der Laufzeit-Phase stehen; ein Eintrag
+  nur in der Test-Phase installiert sie beim Anwenden nicht.
+- Eine Test-Voraussetzung wird akzeptiert, wenn sie in der Test-Phase oder in
+  der Laufzeit-Phase steht - die Laufzeit-Phase wird immer installiert.
+- Kernmodule gehoeren nicht in die Liste. Die Testhelfer im Repo (MockUA,
+  MockForgejo, Test::WWW::MikroTik::MockUA) sind keine Voraussetzungen.
+
+Am cpanfile:
+Alle genannten Voraussetzungen sind heute schon genannt, es fehlt nur
+der Test. Zusaetzlich steht das cpanfile nicht in der Hausform:
+- die leeren Pins fallen weg, ein leerer Pin ist kein Pin:
+  `requires 'namespace::clean', '0';` wird `requires 'namespace::clean';`
+  und `requires 'Carp', '0';` wird `requires 'Carp';`
+- die Voraussetzungen stehen alphabetisch:
+  Carp, HTTP::Tiny, JSON::MaybeXS, Moo, namespace::clean
+- die echten Mindestversionen (HTTP::Tiny 0.080, JSON::MaybeXS 1.004000,
+  Moo 2.000000) bleiben unberuehrt.
+
+Carp ist ein Kernmodul und steht wie in den anderen Repos trotzdem im
+cpanfile - der Test verlangt es nicht.
+
+Der rote Beweis: der Test muss gegen das alte cpanfile rot sein. Belege ihn so
+und nenne das Ergebnis in der Abschlussmeldung:
+
+    cd <worktree>
+    cp cpanfile cpanfile.bak
+    git show main:cpanfile > cpanfile
+    prove -lr t/cpanfile.t     # muss rot sein
+    mv cpanfile.bak cpanfile
+    prove -lr t/cpanfile.t     # muss gruen sein
+
+cpanfile.bak ist nur eine Sicherung: sie wird nicht committet und am Ende
+geloescht.
+
+Aenderungen ausserhalb von cpanfile, t/cpanfile.t und Changes: nicht.
+Ein Changes-Eintrag unter {$NEXT} (ohne Kartennummern, bei 78 Spalten
+umbrochen). Commit-Betreff nennt die Karte als (k16), kein #16.
+
+2026-10-20 16:52 Test neu nach Hausmuster (p5-www-idrac als Vorbild): liest das cpanfile, trennt die Laufzeit-Phase von der Test-Phase, hart kodierte Liste mit je einem ok() pro Voraussetzung; Modul- und Distributionsname werden beide akzeptiert (HTTP::Tiny/HTTP-Tiny, JSON::MaybeXS/JSON-MaybeXS, namespace::clean/namespace-clean, Test::More/Test-More). Laufzeit muss in der Laufzeit-Phase stehen, Test-Voraussetzung in Test- oder Laufzeit-Phase. Kernmodule (Carp) stehen nicht in der Liste.
+
+2026-10-20 16:53 Entscheidung: der Test prueft zusaetzlich die Hausform des cpanfiles (Laufzeit-Voraussetzungen alphabetisch, kein leerer Pin '0'). Grund: die reine Voraussetzungsliste ist gegen das alte cpanfile gruen (alle Module standen schon in der richtigen Phase) - nur diese zwei Hausform-Pruefungen machen den Test dort rot, wie die Karte es verlangt. Beide Abweichungen nennt die Karte selbst als Hausform-Maengel.
+
+2026-10-20 16:53 Also found: das cpanfile nennt keine Mindestversion fuer perl, die drei vergleichbaren WWW-Dists (hetzner, idrac, keycloak) pinnen alle 'requires perl'. Ausserhalb des Kartenauftrags, nicht angefasst.
+
+2026-10-20 16:53 Fertig, Commit ed9fe1e auf k16-openbao. cpanfile: Voraussetzungen alphabetisch (Carp, HTTP::Tiny, JSON::MaybeXS, Moo, namespace::clean), leere Pins ('0') raus, Mindestversionen unveraendert. t/cpanfile.t neu: 7 Tests (4 Laufzeit + 1 Test + 2 Hausform). Roter Beweis: gegen das alte cpanfile (Stand von main) rot mit 2 Fehlschlaegen (nicht alphabetisch, leerer Pin 0), gegen das neue cpanfile gruen. Volle Suite: prove -lr t, 13 Dateien, 149 Tests, gruen, offline (96-live-health.t uebersprungen ohne OPENBAO_TEST_URL). dzil build sauber. Aenderungen nur in cpanfile, t/cpanfile.t, Changes.
+
+Koordination: der Commit ed9fe1e steht auf main (ff-only gemergt). Der rote Beweis wurde nachgeprueft: gegen das alte cpanfile aus main sind 2 von 7 Tests rot (die alphabetische Reihenfolge und der leere Pin '0'), mit dem neuen cpanfile sind alle 7 gruen. Suite offline: 13 Dateien, 149 Tests, PASS.
