@@ -2,6 +2,10 @@ Revision history for WWW-OpenBao
 
 {{$NEXT}}
 
+ - The /health documentation names the fields OpenBao delivers (initialized,
+   sealed, standby, version, replication_performance_mode and
+   replication_dr_mode) and marks performance_standby as a Vault field that
+   OpenBao does not deliver
  - A 2xx response whose body is not JSON croaks with method, path and the
    start of the body instead of a bare decode error (k13)
  - A trailing slash on endpoint no longer produces // in request URLs

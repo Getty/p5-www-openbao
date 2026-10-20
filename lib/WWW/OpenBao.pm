@@ -185,13 +185,15 @@ sub _read_sa_token {
   return <$fh>;
 }
 
-# Sys: health check. standbyok/perfstandbyok/sealedcode/uninitcode flatten the
-# operational states that otherwise answer with a non-2xx status (standby 429,
-# performance standby, sealed 503, uninitialised 501) to a 200, so _request
-# decodes the body instead of croaking — the caller reads the state out of the
-# returned hashref (initialized, sealed, standby, ...). The eval still maps a
-# genuinely unreachable server (network error, or non-2xx despite the codes)
-# to undef, so "no answer at all" stays distinct from any reported state.
+# Sys: health check. standbyok/sealedcode/uninitcode flatten the operational
+# states that otherwise answer with a non-2xx status (standby 429, sealed 503,
+# uninitialised 501) to a 200, so _request decodes the body instead of
+# croaking — the caller reads the state out of the returned hashref
+# (initialized, sealed, standby, ...). perfstandbyok is Vault's parameter for
+# the performance-standby state; OpenBao does not know it and ignores it
+# without complaint. The eval still maps a genuinely unreachable server
+# (network error, or non-2xx despite the codes) to undef, so "no answer at
+# all" stays distinct from any reported state.
 sub health {
   my ($self) = @_;
   return eval {
@@ -578,9 +580,22 @@ reachable server, whatever its seal, standby or init state. The request is made
 with C<standbyok=true&perfstandbyok=true&sealedcode=200&uninitcode=200>, so
 OpenBao/Vault answers C<200> — and therefore a body — for the states that
 otherwise carry their answer only in a non-2xx status code: standby (C<429>),
-performance standby, sealed (C<503>) and uninitialised (C<501>). Read the state
-out of the returned fields — C<initialized>, C<sealed>, C<standby>,
-C<performance_standby>, C<version> and the rest of the health payload.
+sealed (C<503>) and uninitialised (C<501>). Read the state out of the returned
+fields: C<initialized>, C<sealed>, C<standby>, C<version>,
+C<replication_performance_mode> and C<replication_dr_mode> are what OpenBao
+delivers, together with C<server_time_utc> and — on an unsealed server —
+C<cluster_name> and C<cluster_id>.
+
+C<performance_standby> is a Vault field: it reports the performance-standby
+state, which only Vault Enterprise has. OpenBao has no such state and does not
+deliver the field at all.
+
+C<standbyok> and C<perfstandbyok> come from the Vault API. OpenBao honours
+C<standbyok> the way Vault does, so a standby server answers C<200> there too;
+C<perfstandbyok>, Vault's parameter for the performance-standby state, is
+unknown to OpenBao and ignored without complaint (checked against OpenBao
+2.7.1). The flattening therefore rests on C<standbyok>, C<sealedcode> and
+C<uninitcode>.
 
 Because of this, a sealed, uninitialised or standby server yields an
 inspectable hashref rather than C<undef>. C<undef> means only that the server
