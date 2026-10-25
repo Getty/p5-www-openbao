@@ -15,7 +15,8 @@ the hazards section of the house rules before changing behaviour.
 ## Delegation
 
 Delegate behavior-relevant code to the right agent instead of touching it yourself —
-principle and lane are in `.claude/rules/www-openbao-rules.md`.
+the delegation lock and the publish gate are shared house rules (skilletor bundle
+`getty-cpan-dist@getty`); lanes and hazards are in `.claude/rules/www-openbao-rules.md`.
 
 | Task | Agent |
 |---|---|
