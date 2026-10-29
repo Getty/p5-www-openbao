@@ -13,7 +13,7 @@ use WWW::OpenBao;
 # read_secret_metadata surfaces the data.metadata block (version, created_time,
 # destroyed, ...) that a KV v2 data read carries alongside the values. It is a
 # separate entry point: read_secret must keep returning the bare data.data
-# hashref, unchanged, so value-only consumers (goldmine, hiplatform) are not
+# hashref, unchanged, so value-only consumers (the downstream apps) are not
 # broken.
 package Test::OpenBao::HTTPStub;
 
@@ -110,12 +110,12 @@ my $new_bao = sub {
   my $bao  = WWW::OpenBao->new(
     endpoint => 'http://test',
     token    => 't',
-    kv_mount => 'goldmine',
+    kv_mount => 'myapp',
     _http    => $stub,
   );
 
   $bao->read_secret_metadata('a/b');
-  is $stub->last_call->{url}, 'http://test/v1/goldmine/data/a/b',
+  is $stub->last_call->{url}, 'http://test/v1/myapp/data/a/b',
      'read_secret_metadata honours a non-default kv_mount';
 }
 

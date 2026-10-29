@@ -5,8 +5,7 @@ description: Load for any edit under lib/WWW/OpenBao.pm or its tests — the sin
 
 # WWW::OpenBao — repo conventions
 
-A deliberately small Perl HTTP client for OpenBao / HashiCorp Vault, extracted from
-`HI::Daemon`. Domain knowledge about the API itself (paths, response shapes, status-code
+A deliberately small Perl HTTP client for OpenBao / HashiCorp Vault. Domain knowledge about the API itself (paths, response shapes, status-code
 semantics) is in skill `openbao-general` — this file is only about how *this
 distribution* is built.
 
@@ -98,9 +97,7 @@ they live in the built dist, not in the repo. Don't commit them.
 
 ## Hazards — the mechanisms behind the short rules
 
-**The consumers are downstream, not upstream.** `goldmine` (`Goldmine::OpenBao`,
-`Goldmine::Task::Role`, `Goldmine::CLI::Command::Openbao`), `hiplatform` (`HIP::OpenBao`)
-and `hi-proto` (`HI::Royal`, `HI::AIP::KeyBroker`) declare `requires 'WWW::OpenBao'` and
+**The consumers are downstream, not upstream.** Applications declare `requires 'WWW::OpenBao'` and
 wrap this client. They catch what this distribution croaks and treat a 404 as a soft miss,
 so a change to the croak/undef contract or to what `delete_secret` deletes changes *their*
 error handling. Those repositories are not part of this checkout — you cannot build them

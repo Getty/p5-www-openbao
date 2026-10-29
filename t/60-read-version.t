@@ -96,12 +96,12 @@ my $new_bao = sub {
   my $bao  = WWW::OpenBao->new(
     endpoint => 'http://test',
     token    => 't',
-    kv_mount => 'goldmine',
+    kv_mount => 'myapp',
     _http    => $stub,
   );
 
   $bao->read_secret('a/b', version => 5);
-  is $stub->last_call->{url}, 'http://test/v1/goldmine/data/a/b?version=5',
+  is $stub->last_call->{url}, 'http://test/v1/myapp/data/a/b?version=5',
      'versioned read honours a non-default kv_mount';
 }
 

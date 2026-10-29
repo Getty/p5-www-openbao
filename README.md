@@ -50,7 +50,7 @@ not mounted at `kubernetes`.
 ```perl
 $bao->init;                               # first-time init (dev only)
 $bao->unseal($key);                       # unseal with a key share
-$bao->enable_engine('goldmine', 'kv-v2'); # mount a named KV engine
+$bao->enable_engine('myapp', 'kv-v2');    # mount a named KV engine
 $bao->health;                             # /v1/sys/health
 ```
 

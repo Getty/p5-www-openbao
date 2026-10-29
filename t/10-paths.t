@@ -31,10 +31,10 @@ is $bao->token, 'new-token',              'token is writable (login flows)';
 
 my $bao2 = WWW::OpenBao->new(
   endpoint => 'http://vault:8200',
-  kv_mount => 'goldmine',
+  kv_mount => 'myapp',
 );
 is $bao2->_kv_path('a/b'),
-   'v1/goldmine/data/a/b',                'custom kv_mount honoured';
+   'v1/myapp/data/a/b',                   'custom kv_mount honoured';
 
 # k11: segments are escaped, separators and unreserved characters are not
 is $bao->_kv_path('a b/c?d#e%f'),

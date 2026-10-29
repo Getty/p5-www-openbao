@@ -27,9 +27,7 @@ the `_request` seam, the croak/undef error contract, the dependency set, tests. 
 
 ## Hazards — the short form (mechanism and background: skill `www-openbao-core`)
 
-- **Consumers.** `goldmine` (`Goldmine::OpenBao`, `Goldmine::Task::Role`,
-  `Goldmine::CLI::Command::Openbao`), `hiplatform` (`HIP::OpenBao`) and `hi-proto`
-  (`HI::Royal`, `HI::AIP::KeyBroker`) wrap this client. A change to the croak/undef contract
+- **Consumers.** Downstream applications wrap this client. A change to the croak/undef contract
   or to what `delete_secret` deletes lands in their error handling, not in ours — ticket
   them, never edit those repos from this one.
 - **The suite is offline by construction and must stay that way.** No live OpenBao, no k8s,

@@ -140,12 +140,12 @@ my $body_of = sub {
   my $bao  = WWW::OpenBao->new(
     endpoint => 'http://test',
     token    => 't',
-    kv_mount => 'goldmine',
+    kv_mount => 'myapp',
     _http    => $stub,
   );
 
   $bao->destroy_secret('a/b', 7);
-  is $stub->last_call->{url}, 'http://test/v1/goldmine/destroy/a/b',
+  is $stub->last_call->{url}, 'http://test/v1/myapp/destroy/a/b',
      'destroy_secret honours a non-default kv_mount';
 }
 
