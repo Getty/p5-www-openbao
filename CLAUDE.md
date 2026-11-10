@@ -28,7 +28,7 @@ the delegation lock and the publish gate are shared house rules (skilletor bundl
 The agents carry their skills via `briefing.skills` (see `.claude/agents/`); the main agent
 delegates rather than loading them. Skill sources live under `.claude/skills/` —
 `www-openbao-core` (repo conventions) and `openbao-general` (the OpenBao/Vault HTTP API)
-are owned here; the `perl-*` and `karr` skills are hardlinked from the shared repos.
+are owned here; the `perl-*` and `karr` skills are installed by skilletor from the shared repos.
 
 ## Commands
 
